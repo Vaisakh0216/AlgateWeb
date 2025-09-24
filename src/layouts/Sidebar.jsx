@@ -5,24 +5,34 @@ import PublicIcon from "@mui/icons-material/Public";
 
 export default function Sidebar() {
   const location = useLocation(); // Get current path
+  const currentRole = localStorage.getItem("role");
 
-  const menuItems = [
-    {
-      name: "Dashboard",
-      path: "/dashboard",
-      icon: <DashboardIcon fontSize="small" />,
-    },
-    {
-      name: "Application",
-      path: "/dashboard/settings",
-      icon: <ListAltIcon fontSize="small" />,
-    },
-    {
-      name: "Countries",
-      path: "/dashboard/profile",
-      icon: <PublicIcon fontSize="small" />,
-    },
-  ];
+  const menuItems =
+    currentRole == "counsellor"
+      ? [
+          {
+            name: "Dashboard",
+            path: "/dashboard",
+            icon: <DashboardIcon fontSize="small" />,
+          },
+        ]
+      : [
+          {
+            name: "Dashboard",
+            path: "/dashboard",
+            icon: <DashboardIcon fontSize="small" />,
+          },
+          {
+            name: "Application",
+            path: "/application",
+            icon: <ListAltIcon fontSize="small" />,
+          },
+          {
+            name: "Countries",
+            path: "/dashboard/profile",
+            icon: <PublicIcon fontSize="small" />,
+          },
+        ];
 
   return (
     <aside
@@ -31,7 +41,7 @@ export default function Sidebar() {
         background: "#332C6A",
         color: "#fff",
         padding: "1rem",
-        height: "100vh",
+        minHeight: "100%",
         zIndex: 1000,
       }}
     >

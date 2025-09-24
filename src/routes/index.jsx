@@ -4,8 +4,12 @@ import Dashboard from "../pages/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import ErrorPage from "../pages/ErrorPage";
 import Login from "../pages/Login";
+import Application from "../pages/application";
+import ApplicationDetail from "../pages/application/ApplicationDetails";
 
 const isLoggedIn = true; // 🔐 replace with real auth check
+const currentRole = localStorage.getItem("role");
+console.log("role", currentRole);
 
 const router = createBrowserRouter([
   {
@@ -16,13 +20,22 @@ const router = createBrowserRouter([
       { path: "login", element: <Login /> },
 
       {
-        path: "dashboard",
         element: (
           <ProtectedRoute isAuth={isLoggedIn}>
             <AppLayout />
           </ProtectedRoute>
         ),
-        children: [{ index: true, element: <Dashboard /> }],
+        children: [
+          { path: "dashboard", element: <Dashboard /> },
+          {
+            path: "application",
+            children: [
+              { index: true, element: <Application /> },
+              { path: ":id", element: <Application /> },
+              { path: ":id/:childId", element: <ApplicationDetail /> },
+            ],
+          },
+        ],
       },
     ],
   },

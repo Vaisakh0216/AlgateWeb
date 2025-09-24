@@ -15,6 +15,11 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  const onSubmit = () => {
+    localStorage.setItem("role", "Admin");
+    navigate("/dashboard");
+  };
+
   return (
     <Box
       sx={{
@@ -112,7 +117,7 @@ export default function Login() {
             "&:hover": { bgcolor: "#003f73" },
             mb: 2,
           }}
-          onClick={() => navigate("/dashboard")}
+          onClick={() => onSubmit()}
         >
           Login
         </Button>

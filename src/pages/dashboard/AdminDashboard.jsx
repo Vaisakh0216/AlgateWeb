@@ -129,7 +129,7 @@ function SortableCard({ id, name, flag, onClick }) {
   );
 }
 
-const Dashboard = () => {
+const AdminDashboard = () => {
   const [countries, setCountries] = useState(initialCountries);
   const navigate = useNavigate();
   // sensors allow mouse + touch + keyboard drag
@@ -224,4 +224,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default AdminDashboard;
