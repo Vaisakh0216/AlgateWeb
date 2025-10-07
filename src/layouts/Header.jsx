@@ -22,7 +22,11 @@ function Header() {
         <a href="/help" style={{ color: "#333", textDecoration: "none" }}>
           Help
         </a>
-        <a href="/login" style={{ color: "#333", textDecoration: "none" }}>
+        <a
+          href="/login"
+          style={{ color: "#333", textDecoration: "none" }}
+          onClick={() => localStorage.clear()}
+        >
           Logout
         </a>
       </nav>

@@ -18,8 +18,8 @@ import CommentInputBox from "../../commentBox";
 
 const steps = [
   {
-    label: "Application Submission (with fee)",
-    description: ``,
+    label: "Documents Collection",
+    description: `- Proof of Sponsorship - In case you are sponsored by a family/relative, a notarized declaration of sponsorship to be submitted. Proof of professional status of the sponsor – contract of employment, pay slips for the last 3 months; self-employed – certificate of registration of the Company, company’s bank statements for the last three months dully signed and stamped by the bank and Current years ITR`,
   },
   {
     label: "University Interview",
@@ -218,6 +218,7 @@ export default function ApplicationDetail() {
                         <FilePreviewCard />
                         <FilePreviewCard />
                         <FilePreviewCard />
+                        {/* <FilePreviewCard />
                         <FilePreviewCard />
                         <FilePreviewCard />
                         <FilePreviewCard />
@@ -225,10 +226,9 @@ export default function ApplicationDetail() {
                         <FilePreviewCard />
                         <FilePreviewCard />
                         <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
+                        <FilePreviewCard /> */}
                       </div>
-                      <div
+                      {/* <div
                         style={{
                           width: "100%",
                           display: "flex",
@@ -240,7 +240,7 @@ export default function ApplicationDetail() {
                       </div>
                       <div>
                         <CommentInputBox />
-                      </div>
+                      </div> */}
                     </StepContent>
                   )}
                 </Step>

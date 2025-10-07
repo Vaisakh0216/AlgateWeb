@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,44 +16,27 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 // Import flags
-import Uk from "../assets/united-kingdom.png";
-import Slovenia from "../assets/slovenia.png";
-import Slovakia from "../assets/slovakia.png";
-import Mauritius from "../assets/mauritius.png";
-import Malta from "../assets/malta.png";
-import Spain from "../assets/spain.png";
-import Finland from "../assets/finland.png";
-import Sweden from "../assets/sweden.png";
-import Lithuania from "../assets/lithuania.png";
-import Latvia from "../assets/latvia.png";
-import Austria from "../assets/austria.png";
-import Germany from "../assets/germany.png";
-import France from "../assets/france.png";
-import Singapore from "../assets/singapore.png";
-import Malaysia from "../assets/malaysia.png";
+import UK from "../../assets/united-kingdom.png";
+import SI from "../../assets/slovenia.png";
+import SK from "../../assets/slovakia.png";
+import MT from "../../assets/mauritius.png";
+import ML from "../../assets/malta.png";
+import SP from "../../assets/spain.png";
+import FL from "../../assets/finland.png";
+import SD from "../../assets/sweden.png";
+import LT from "../../assets/lithuania.png";
+import LV from "../../assets/latvia.png";
+import AS from "../../assets/austria.png";
+import GM from "../../assets/germany.png";
+import FC from "../../assets/france.png";
+import SG from "../../assets/singapore.png";
+import MY from "../../assets/malaysia.png";
 import { InputAdornment, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import ApplicationTable from "../components/Table";
+import ApplicationTable from "../../components/Table";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useNavigate } from "react-router-dom";
-
-const initialCountries = [
-  { id: "uk", name: "United Kingdom", flag: Uk },
-  { id: "slovenia", name: "Slovenia", flag: Slovenia },
-  { id: "slovakia", name: "Slovakia", flag: Slovakia },
-  { id: "spain", name: "Spain", flag: Spain },
-  { id: "finland", name: "Finland", flag: Finland },
-  { id: "sweden", name: "Sweden", flag: Sweden },
-  { id: "lithuania", name: "Lithuania", flag: Lithuania },
-  { id: "latvia", name: "Latvia", flag: Latvia },
-  { id: "malta", name: "Malta", flag: Malta },
-  { id: "mauritius", name: "Mauritius", flag: Mauritius },
-  { id: "austria", name: "Austria", flag: Austria },
-  { id: "germany", name: "Germany", flag: Germany },
-  { id: "france", name: "France", flag: France },
-  { id: "singapore", name: "Singapore", flag: Singapore },
-  { id: "malaysia", name: "Malaysia", flag: Malaysia },
-];
+import axiosInstance from "../../config/axiosConfig";
 
 // --- Replace your SortableCard with this ---
 function SortableCard({ id, name, flag, onClick }) {
@@ -85,7 +68,10 @@ function SortableCard({ id, name, flag, onClick }) {
     minWidth: "120px",
     cursor: isDragging ? "grabbing" : "pointer", // pointer when not dragging
     userSelect: "none",
+    textTransform: "capitalize",
   };
+
+  console.log("the flag", flag);
 
   const handleCardClick = (e) => {
     // If a drag is in progress, ignore the click (prevents accidental click after drag)
@@ -130,8 +116,90 @@ function SortableCard({ id, name, flag, onClick }) {
 }
 
 const AdminDashboard = () => {
-  const [countries, setCountries] = useState(initialCountries);
+  // const [countries, setCountries] = useState(initialCountries);
   const navigate = useNavigate();
+  const [applications, setApplications] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    per_page: 10,
+    total: 0,
+  });
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const tabeHeaders = [
+    "Student Id",
+    "Student Name",
+    "Course",
+    "University",
+    "Remarks",
+    "Status",
+    "Counsellor",
+    "Processor",
+  ];
+
+  const flagMap = {
+    UK,
+    SI,
+    SK,
+    MT,
+    ML,
+    SP,
+    FL,
+    SD,
+    LT,
+    LV,
+    AS,
+    GM,
+    FC,
+    SG,
+    MY,
+  };
+
+  const getApplicationsList = (page, perPage) => {
+    axiosInstance
+      .get("applications", {
+        params: { page, per_page: perPage, search: search },
+      })
+      .then((res) => {
+        setLoading(false);
+        const rows = res?.data?.data?.map((item) => [
+          item.id,
+          item.applicant_name,
+          item.course,
+          item.university,
+          "",
+          item.status,
+          item?.counselor?.name,
+          item?.processor?.name,
+          "",
+        ]);
+        setApplications(rows);
+        setPagination(res?.data?.pagination);
+      });
+  };
+
+  const getCountriesList = () => {
+    axiosInstance.get("countries").then((res) => {
+      const rows = res?.data?.map((item) => ({
+        id: item.id,
+        name: item.name,
+        flag: flagMap[item?.code] || null,
+      }));
+      setCountries(rows);
+    });
+  };
+  console.log("this is search value", search);
+
+  useEffect(() => {
+    getApplicationsList(pagination.current_page, pagination.per_page);
+    getCountriesList();
+  }, [pagination.current_page, pagination.per_page, search]);
+
+  console.log("the con", countries);
+
   // sensors allow mouse + touch + keyboard drag
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -218,7 +286,23 @@ const AdminDashboard = () => {
         Recent Application
       </h3>
       <div style={{ marginTop: "20px" }}>
-        <ApplicationTable />
+        <ApplicationTable
+          applications={applications}
+          tabeHeaders={tabeHeaders}
+          pagination={pagination}
+          onPageChange={(newPage) =>
+            setPagination((prev) => ({ ...prev, current_page: newPage }))
+          }
+          onPerPageChange={(newPerPage) =>
+            setPagination((prev) => ({
+              ...prev,
+              per_page: newPerPage,
+              current_page: 1,
+            }))
+          }
+          searchValue={setSearch}
+          loading={loading}
+        />
       </div>
     </div>
   );

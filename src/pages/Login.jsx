@@ -3,21 +3,70 @@ import {
   Box,
   TextField,
   Button,
-  Typography,
   IconButton,
   InputAdornment,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
+import axios from "axios"; // or axiosInstance if you prefer
+import axiosInstance from "../config/axiosConfig";
 
 export default function Login() {
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const onSubmit = () => {
-    localStorage.setItem("role", "Admin");
-    navigate("/dashboard");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+    setSnackbarMessage("");
+  };
+
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  const onSubmit = async () => {
+    if (!email || !password) {
+      setSnackbarMessage("Email and password are required.");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setSnackbarMessage("Please enter a valid email address.");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const credential = { email, password };
+
+    try {
+      const res = await axiosInstance.post("login", credential);
+
+      localStorage.setItem("authToken", res?.data?.token);
+      localStorage.setItem("userInfo", JSON.stringify(res?.data?.user));
+      localStorage.setItem(
+        "role",
+        res?.data?.user?.sys_role_id == 3 ? "counsellor" : "admin"
+      );
+
+      navigate(
+        `${res?.data?.user?.sys_role_id == 3 ? "/cdashboard" : "/dashboard"}`
+      );
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Login failed. Please try again.";
+      setSnackbarMessage(message);
+      setSnackbarOpen(true);
+    }
   };
 
   return (
@@ -41,7 +90,7 @@ export default function Login() {
           p: 4,
         }}
       >
-        {/* Logo Placeholder */}
+        {/* Logo */}
         <Box
           sx={{
             height: 80,
@@ -49,48 +98,32 @@ export default function Login() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            // bgcolor: "#f0f0f0",
-            borderRadius: 2,
           }}
         >
-          <img src={Logo} width={150} />
-          {/* <Typography variant="h6" color="text.secondary">
-            LOGO
-          </Typography> */}
+          <img src={Logo} width={150} alt="Logo" />
         </Box>
 
-        {/* Heading */}
-        {/* <Typography
-          variant="h4"
-          sx={{
-            fontWeight: "bold",
-            color: "#2b2b6e",
-            mb: 2,
-            textAlign: "center",
-          }}
-        >
-          Login
-        </Typography> */}
-
-        {/* Email */}
+        {/* Email Field */}
         <TextField
           fullWidth
           placeholder="Email@email.com"
           variant="outlined"
           label="Email"
-          InputProps={{
-            sx: { borderRadius: "30px" },
-          }}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          InputProps={{ sx: { borderRadius: "30px" } }}
           sx={{ mb: 3 }}
         />
 
-        {/* Password */}
+        {/* Password Field */}
         <TextField
           fullWidth
           type={showPassword ? "text" : "password"}
           placeholder="********"
           variant="outlined"
           label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           InputProps={{
             sx: { borderRadius: "30px" },
             endAdornment: (
@@ -117,12 +150,12 @@ export default function Login() {
             "&:hover": { bgcolor: "#003f73" },
             mb: 2,
           }}
-          onClick={() => onSubmit()}
+          onClick={onSubmit}
         >
           Login
         </Button>
 
-        {/* Optional Links */}
+        {/* Links */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
           <Button
             variant="text"
@@ -140,6 +173,22 @@ export default function Login() {
           </Button>
         </Box>
       </Box>
+
+      {/* Snackbar for error messages */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

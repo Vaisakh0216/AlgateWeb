@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import PublicIcon from "@mui/icons-material/Public";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 
 export default function Sidebar() {
   const location = useLocation(); // Get current path
@@ -29,8 +30,13 @@ export default function Sidebar() {
           },
           {
             name: "Countries",
-            path: "/dashboard/profile",
+            path: "/country",
             icon: <PublicIcon fontSize="small" />,
+          },
+          {
+            name: "Invoice",
+            path: "/invoice",
+            icon: <ReceiptIcon fontSize="small" />,
           },
         ];
 

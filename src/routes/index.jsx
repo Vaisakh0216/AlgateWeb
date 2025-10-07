@@ -6,6 +6,9 @@ import ErrorPage from "../pages/ErrorPage";
 import Login from "../pages/Login";
 import Application from "../pages/application";
 import ApplicationDetail from "../pages/application/ApplicationDetails";
+import CountryList from "../pages/country/index";
+import Invoice from "../pages/invoice/invoice";
+import { getChildrenByRole } from "./RoleRoutes";
 
 const isLoggedIn = true; // 🔐 replace with real auth check
 const currentRole = localStorage.getItem("role");
@@ -25,17 +28,20 @@ const router = createBrowserRouter([
             <AppLayout />
           </ProtectedRoute>
         ),
-        children: [
-          { path: "dashboard", element: <Dashboard /> },
-          {
-            path: "application",
-            children: [
-              { index: true, element: <Application /> },
-              { path: ":id", element: <Application /> },
-              { path: ":id/:childId", element: <ApplicationDetail /> },
-            ],
-          },
-        ],
+        children: getChildrenByRole(currentRole),
+        // children: [
+        //   { path: "dashboard", element: <Dashboard /> },
+        //   {
+        //     path: "application",
+        //     children: [
+        //       { index: true, element: <Application /> },
+        //       { path: ":id", element: <Application /> },
+        //       { path: ":id/:childId", element: <ApplicationDetail /> },
+        //     ],
+        //   },
+        //   { path: "country", element: <CountryList /> },
+        //   { path: "invoice", element: <Invoice /> },
+        // ],
       },
     ],
   },

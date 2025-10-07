@@ -55,6 +55,73 @@ const initialCountries = [
   { id: "malaysia", name: "Malaysia", flag: Malaysia },
 ];
 
+const applications = [
+  {
+    name: "Parviz Aslanov",
+    avatar: "https://i.pravatar.cc/40?img=1",
+    university: "Buckinghamshire New University",
+    course: "Msc International Business Management",
+    remarks: "Academic document is yet to upload.",
+    status: "Open",
+  },
+  {
+    name: "Seving Aslanova",
+    avatar: "https://i.pravatar.cc/40?img=2",
+    university: "Buckinghamshire New University",
+    course: "Biomedical Science",
+    remarks: "Passport copy shared.",
+    status: "Open",
+  },
+  {
+    name: "Ceyhun Aslanov",
+    avatar: "https://i.pravatar.cc/40?img=3",
+    university: "University of Chester",
+    course: "Bachelor of Science with Honours",
+    remarks: "Passport copy requested.",
+    status: "Open",
+  },
+  {
+    name: "Ayla Məmmədova",
+    avatar: "https://i.pravatar.cc/40?img=4",
+    university: "University of Chester",
+    course: "Bachelor of Science with Honours",
+    remarks: "Interview is pending",
+    status: "In Progress",
+  },
+  {
+    name: "Parviz Aslanov",
+    avatar: "https://i.pravatar.cc/40?img=1",
+    university: "Buckinghamshire New University",
+    course: "Msc International Business Management",
+    remarks: "Academic document is yet to upload.",
+    status: "Open",
+  },
+  {
+    name: "Seving Aslanova",
+    avatar: "https://i.pravatar.cc/40?img=2",
+    university: "Buckinghamshire New University",
+    course: "Biomedical Science",
+    remarks: "Passport copy shared.",
+    status: "Open",
+  },
+  {
+    name: "Ceyhun Aslanov",
+    avatar: "https://i.pravatar.cc/40?img=3",
+    university: "University of Chester",
+    course: "Bachelor of Science with Honours",
+    remarks: "Passport copy requested.",
+    status: "Open",
+  },
+  {
+    name: "Ayla Məmmədova",
+    avatar: "https://i.pravatar.cc/40?img=4",
+    university: "University of Chester",
+    course: "Bachelor of Science with Honours",
+    remarks: "Interview is pending",
+    status: "In Progress",
+  },
+];
+
 // --- Replace your SortableCard with this ---
 function SortableCard({ id, name, flag, onClick }) {
   const {
@@ -218,7 +285,7 @@ const Dashboard = () => {
         Recent Application
       </h3>
       <div style={{ marginTop: "20px" }}>
-        <ApplicationTable />
+        <ApplicationTable applications={applications} />
       </div>
     </div>
   );
