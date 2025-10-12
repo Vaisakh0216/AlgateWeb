@@ -3,12 +3,12 @@ import React from "react";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-const FilePreviewCard = () => {
+const FilePreviewCard = ({ name, path }) => {
   const styles = {
     card: {
       display: "flex",
       alignItems: "center",
-      backgroundColor: "#f7f9fc",
+      backgroundColor: "#eef1f7",
       borderRadius: "12px",
       padding: "10px",
       maxWidth: "250px",
@@ -16,6 +16,7 @@ const FilePreviewCard = () => {
       boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
       fontFamily: "Arial, sans-serif",
       position: "relative",
+      cursor: "pointer",
     },
     fileIconWrapper: {
       position: "relative",
@@ -77,8 +78,18 @@ const FilePreviewCard = () => {
     },
   };
 
+  const handleDownload = (path, name) => {
+    const baseURL = "https://algatecrm-api.v-nexus.com/storage/";
+    const fileURL = `${baseURL}${path}`;
+    const link = document.createElement("a");
+    link.href = fileURL;
+    link.download = name;
+    link.target = "_blank";
+    link.click();
+  };
+
   return (
-    <div style={styles.card}>
+    <div style={styles.card} onClick={() => handleDownload(path, name)}>
       {/* File icon with PDF badge */}
       <div style={styles.fileIconWrapper}>
         <div style={styles.fileIcon}>
@@ -89,7 +100,7 @@ const FilePreviewCard = () => {
 
       {/* File details */}
       <div style={styles.fileDetails}>
-        <div style={styles.fileName}>Degree Certificate</div>
+        <div style={styles.fileName}>{name}</div>
         <div style={styles.fileSize}>94 KB of 94 KB</div>
         <div style={styles.status}>
           <CheckCircleIcon fontSize="small" style={styles.checkIcon} />

@@ -15,6 +15,10 @@ import EditSquareIcon from "@mui/icons-material/EditSquare";
 import FileUploader from "../../FileUploader";
 import FilePreviewCard from "../../uploadedFile";
 import CommentInputBox from "../../commentBox";
+import axiosInstance from "../../config/axiosConfig";
+import { useParams } from "react-router-dom";
+import PendingUploadCard from "../../components/PendingUpload";
+import MessageIcon from "@mui/icons-material/Message";
 
 const steps = [
   {
@@ -71,38 +75,53 @@ const steps = [
 
 export default function ApplicationDetail() {
   const [open, setOpen] = React.useState(false);
-
-  // Store which steps are expanded
+  const [applicationSteps, setApplicationSteps] = React.useState();
   const [expandedSteps, setExpandedSteps] = React.useState([]);
+  const para = useParams();
 
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
   };
 
-  // Toggle individual step
   const handleStepClick = (index) => {
     setExpandedSteps((prev) =>
       prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     );
   };
 
-  // Expand or collapse all steps
   const handleExpandCollapseAll = () => {
     if (expandedSteps.length === steps.length) {
-      setExpandedSteps([]); // Collapse all
+      setExpandedSteps([]);
     } else {
-      setExpandedSteps(steps.map((_, index) => index)); // Expand all
+      setExpandedSteps(steps.map((_, index) => index));
     }
   };
 
   const allExpanded = expandedSteps.length === steps.length;
 
+  const getApplicationSteps = () => {
+    axiosInstance
+      .get(`applications/${para?.id}/full-with-responses`)
+      .then((res) => {
+        setApplicationSteps(res?.data?.application);
+      });
+
+    // axiosInstance.get(`countries/${para?.id}/full-steps`).then((res) => {
+    //   setApplicationSteps(res?.data?.steps);
+    // });
+  };
+
+  React.useEffect(() => {
+    getApplicationSteps();
+  }, []);
+
+  // console.log("this is details", applicationSteps);
+  // const match = data.description.match(/\[(.*?)\]/);
+  // const documents = match ? match[1].split(/\s*,\s*/) : [];
+
   return (
     <div>
-      {/* <Button onClick={toggleDrawer(true)}>Open drawer</Button> */}
-      {/* <Drawer open={open} onClose={toggleDrawer(false)} anchor="right"> */}
       <div style={{ height: "100%" }}>
-        {/* Header */}
         <div
           style={{
             padding: "20px",
@@ -117,33 +136,148 @@ export default function ApplicationDetail() {
         {/* User Info */}
         <div
           style={{
-            padding: "20px",
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            padding: "24px 28px",
+            margin: "20px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
+            border: "1px solid #f0f0f0",
             display: "flex",
-            alignItems: "center",
+            flexDirection: "column",
+            gap: "24px",
           }}
         >
+          {/* Profile Header */}
           <div
             style={{
-              backgroundColor: "#332C6A",
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
               display: "flex",
-              justifyContent: "center",
+              justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
-            <h1 style={{ color: "white", fontSize: "30px" }}>J</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div
+                style={{
+                  backgroundColor: "#332C6A",
+                  width: "70px",
+                  height: "70px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  fontSize: "28px",
+                  fontWeight: "600",
+                  color: "#fff",
+                }}
+              >
+                {applicationSteps?.applicant_name?.charAt(0)?.toUpperCase() ||
+                  "U"}
+              </div>
+
+              <div>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "18px",
+                    fontWeight: "700",
+                    color: "#1a1a1a",
+                  }}
+                >
+                  {applicationSteps?.applicant_name || "--"}
+                </h3>
+                <p
+                  style={{
+                    margin: "4px 0 2px",
+                    fontSize: "14px",
+                    color: "#666",
+                  }}
+                >
+                  {applicationSteps?.email || "--"}
+                </p>
+              </div>
+            </div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              marginLeft: "20px",
-            }}
-          >
-            <span style={{ fontWeight: "600" }}>Jishan</span>
-            <span style={{ fontSize: "12px" }}>alexarawles@gmail.com</span>
+
+          {/* Personal Information */}
+          <div>
+            <h4
+              style={{
+                fontSize: "15px",
+                fontWeight: "600",
+                color: "#332C6A",
+                marginBottom: "16px",
+              }}
+            >
+              Personal Information
+            </h4>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: "12px 24px",
+                fontSize: "14px",
+              }}
+            >
+              <div>
+                <span style={{ color: "#888" }}>Age</span>
+                <p
+                  style={{ margin: "4px 0", fontWeight: "500", color: "#222" }}
+                >
+                  {applicationSteps?.age || "--"}
+                </p>
+              </div>
+
+              <div>
+                <span style={{ color: "#888" }}>Phone</span>
+                <p
+                  style={{ margin: "4px 0", fontWeight: "500", color: "#222" }}
+                >
+                  {applicationSteps?.phone || "--"}
+                </p>
+              </div>
+
+              <div>
+                <span style={{ color: "#888" }}>Degree %</span>
+                <p
+                  style={{ margin: "4px 0", fontWeight: "500", color: "#222" }}
+                >
+                  {applicationSteps?.degree_perc
+                    ? `${applicationSteps.degree_perc}%`
+                    : "--"}
+                </p>
+              </div>
+
+              <div>
+                <span style={{ color: "#888" }}>Plus Two %</span>
+                <p
+                  style={{ margin: "4px 0", fontWeight: "500", color: "#222" }}
+                >
+                  {applicationSteps?.plustwo_perc
+                    ? `${applicationSteps.plustwo_perc}%`
+                    : "--"}
+                </p>
+              </div>
+
+              <div>
+                <span style={{ color: "#888" }}>Intake Year</span>
+                <p
+                  style={{ margin: "4px 0", fontWeight: "500", color: "#222" }}
+                >
+                  {applicationSteps?.year_intake || "--"}
+                </p>
+              </div>
+
+              <div>
+                <span style={{ color: "#888" }}>Passout Year</span>
+                <p
+                  style={{ margin: "4px 0", fontWeight: "500", color: "#222" }}
+                >
+                  {applicationSteps?.year_of_pass_out || "--"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -188,18 +322,38 @@ export default function ApplicationDetail() {
 
           <Box>
             <Stepper orientation="vertical" nonLinear>
-              {steps.map((step, index) => (
-                <Step key={step.label} expanded>
-                  <StepLabel
-                    onClick={() => handleStepClick(index)}
-                    sx={{
-                      cursor: "pointer",
-                      userSelect: "none",
-                      fontWeight: 600,
+              {applicationSteps?.steps?.map((step, index) => (
+                <Step key={step.title} expanded>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between", // ✅ keeps icon at far right
+                      width: "100%",
                     }}
                   >
-                    {step.label}
-                  </StepLabel>
+                    <StepLabel
+                      onClick={() => handleStepClick(index)}
+                      sx={{
+                        cursor: "pointer",
+                        userSelect: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {step.title}
+                    </StepLabel>
+
+                    <MessageIcon
+                      style={{
+                        color: "green",
+                        padding: "3px",
+                        borderRadius: "50%",
+                        border: "1px solid green",
+                        fontSize: "15px",
+                        backgroundColor: "white",
+                      }}
+                    />
+                  </div>
 
                   {expandedSteps.includes(index) && (
                     <StepContent>
@@ -211,36 +365,20 @@ export default function ApplicationDetail() {
                           justifyContent: "flex-start",
                         }}
                       >
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        {/* <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard />
-                        <FilePreviewCard /> */}
+                        {step?.description
+                          ?.match(/\[(.*?)\]/)?.[1]
+                          ?.split(/\s*,\s*/)
+                          ?.map((item, index) => (
+                            <PendingUploadCard
+                              key={index}
+                              name={item.trim()}
+                              id={step?.id}
+                              attachmentName={step?.attachments?.map(
+                                (file) => file
+                              )}
+                            />
+                          ))}
                       </div>
-                      {/* <div
-                        style={{
-                          width: "100%",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignContent: "center",
-                        }}
-                      >
-                        <FileUploader />
-                      </div>
-                      <div>
-                        <CommentInputBox />
-                      </div> */}
                     </StepContent>
                   )}
                 </Step>
@@ -249,7 +387,6 @@ export default function ApplicationDetail() {
           </Box>
         </div>
       </div>
-      {/* </Drawer> */}
     </div>
   );
 }

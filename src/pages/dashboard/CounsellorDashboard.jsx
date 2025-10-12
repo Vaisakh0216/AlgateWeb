@@ -4,7 +4,7 @@ import axiosInstance from "../../config/axiosConfig";
 
 function CounsellorDashboard() {
   const [applications, setApplications] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   const tabeHeaders = [
     "Student Id",
     "Student Name",
@@ -15,7 +15,8 @@ function CounsellorDashboard() {
   ];
 
   const getApplicationsList = () => {
-    axiosInstance.get("applications").then((res) => {
+    axiosInstance.get("applications/my-assigned").then((res) => {
+      setLoading(false);
       const rows = res?.data?.data?.map((item) => [
         item.id,
         item.applicant_name,
@@ -32,6 +33,12 @@ function CounsellorDashboard() {
   useEffect(() => {
     getApplicationsList();
   }, []);
+
+  const createApplication = (data) => {
+    axiosInstance.post("applications", data).then((res) => {
+      getApplicationsList();
+    });
+  };
 
   return (
     <div>
@@ -52,7 +59,8 @@ function CounsellorDashboard() {
         <ApplicationTable
           applications={applications}
           tabeHeaders={tabeHeaders}
-          actionFunction={""}
+          actionFunction={createApplication}
+          loading={loading}
         />
       </div>
     </div>

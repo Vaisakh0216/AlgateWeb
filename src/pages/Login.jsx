@@ -7,11 +7,11 @@ import {
   InputAdornment,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
-import axios from "axios"; // or axiosInstance if you prefer
 import axiosInstance from "../config/axiosConfig";
 
 export default function Login() {
@@ -22,6 +22,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [loading, setLoading] = useState(false); // ✅ New state for loader
 
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
@@ -49,23 +50,31 @@ export default function Login() {
     const credential = { email, password };
 
     try {
+      setLoading(true); // ✅ Start loading
       const res = await axiosInstance.post("login", credential);
 
       localStorage.setItem("authToken", res?.data?.token);
       localStorage.setItem("userInfo", JSON.stringify(res?.data?.user));
       localStorage.setItem(
         "role",
-        res?.data?.user?.sys_role_id == 3 ? "counsellor" : "admin"
+        res?.data?.user?.sys_role_id == 3
+          ? "counsellor"
+          : res?.data?.user?.sys_role_id == 4
+          ? "processor"
+          : "admin"
       );
 
-      navigate(
-        `${res?.data?.user?.sys_role_id == 3 ? "/cdashboard" : "/dashboard"}`
-      );
+      const target =
+        res?.data?.user?.sys_role_id == 3 ? "/cdashboard" : "/dashboard";
+
+      navigate(target, { replace: true });
     } catch (error) {
       const message =
         error?.response?.data?.message || "Login failed. Please try again.";
       setSnackbarMessage(message);
       setSnackbarOpen(true);
+    } finally {
+      setLoading(false); // ✅ Stop loading
     }
   };
 
@@ -137,7 +146,7 @@ export default function Login() {
           sx={{ mb: 4 }}
         />
 
-        {/* Login Button */}
+        {/* Login Button with Loader */}
         <Button
           fullWidth
           variant="contained"
@@ -151,8 +160,13 @@ export default function Login() {
             mb: 2,
           }}
           onClick={onSubmit}
+          disabled={loading} // ✅ disable button while loading
         >
-          Login
+          {loading ? (
+            <CircularProgress size={24} sx={{ color: "white" }} />
+          ) : (
+            "Login"
+          )}
         </Button>
 
         {/* Links */}

@@ -1,62 +1,27 @@
-// 📁 roleRoutes.js
+// RoleRoutes.jsx
+import { Navigate, useRoutes } from "react-router-dom";
+import { getChildrenByRole } from "./ChildrenByRole";
 
-import Dashboard from "../pages/Dashboard";
-import Application from "../pages/application";
-import ApplicationDetail from "../pages/application/ApplicationDetails";
-import CountryList from "../pages/country";
-import Invoice from "../pages/invoice/invoice";
-import CounsellorDashboard from "../pages/dashboard/CounsellorDashboard";
-import AdminDashboard from "../pages/dashboard/AdminDashboard";
+export default function RoleRoutes() {
+  const role = localStorage.getItem("role");
 
-export function getChildrenByRole(role) {
-  switch (role) {
-    case "counsellor":
-      return [
-        {
-          path: "cdashboard",
-          element: <CounsellorDashboard />,
-        },
-        {
-          path: "application",
-          children: [
-            { index: true, element: <Application /> },
-            { path: ":id", element: <Application /> },
-            { path: ":id/:childId", element: <ApplicationDetail /> },
-          ],
-        },
-      ];
-
-    case "admin":
-    case "process":
-      return [
-        {
-          path: "dashboard",
-          element: <AdminDashboard />,
-        },
-        {
-          path: "application",
-          children: [
-            { index: true, element: <Application /> },
-            { path: ":id", element: <Application /> },
-            { path: ":id/:childId", element: <ApplicationDetail /> },
-          ],
-        },
-        {
-          path: "country",
-          element: <CountryList />,
-        },
-        {
-          path: "invoice",
-          element: <Invoice />,
-        },
-      ];
-
-    default:
-      return [
-        {
-          path: "dashboard",
-          element: <AdminDashboard />,
-        },
-      ];
+  if (!role) {
+    // if somehow accessed without role
+    return <Navigate to="/login" replace />;
   }
+
+  const routes = getChildrenByRole(role);
+
+  // fallback if no route matches (shouldn’t happen)
+  routes.push({
+    path: "*",
+    element: (
+      <Navigate
+        to={`/${role === "counsellor" ? "cdashboard" : "dashboard"}`}
+        replace
+      />
+    ),
+  });
+
+  return useRoutes(routes);
 }

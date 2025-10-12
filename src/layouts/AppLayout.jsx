@@ -74,7 +74,9 @@ export default function AppLayout() {
                               }}
                             />
                           )}
-                          {p}
+                          {decodeURIComponent(p).endsWith("}")
+                            ? decodeURIComponent(p).slice(0, -1)
+                            : decodeURIComponent(p)}
                         </>
                       )}
                       {index < arr.length - 1 && (

@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
   Card,
   CardContent,
-  IconButton,
   InputAdornment,
   MenuItem,
   Select,
@@ -16,42 +15,32 @@ import {
   TableRow,
   TextField,
   Typography,
-  Avatar,
   Drawer,
   Divider,
-  Grid,
   Pagination,
   Skeleton,
 } from "@mui/material";
 
 import {
-  Delete as DeleteIcon,
-  MoreHoriz as MoreHorizIcon,
   Search as SearchIcon,
   FilterList as FilterListIcon,
   Sort as SortIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-
-const statusColors = {
-  Open: { bg: "#e8f0fe", color: "#1a73e8" },
-  "In Progress": { bg: "#e6f4ea", color: "#137333" },
-};
+import axiosInstance from "../config/axiosConfig";
 
 function ApplicationFormDrawer({ open, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
-    fullName: "",
+    applicant_name: "",
     email: "",
     phone: "",
     age: "",
     university: "",
-    course: "",
-    remarks: "",
-    country: "UK",
-    twelfthMark: "",
-    degreeMark: "",
-    intakeMonth: "",
-    intakeYear: "",
+    country_id: "",
+    plustwo_perc: "",
+    degree_perc: "",
+    year_of_pass_out: "",
+    year_intake: "",
   });
 
   const handleChange = (e) => {
@@ -64,23 +53,11 @@ function ApplicationFormDrawer({ open, onClose, onSubmit }) {
     onClose();
   };
 
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  const [countryList, setCountryList] = useState();
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 6 }, (_, i) => currentYear + i);
+  useEffect(() => {
+    axiosInstance.get("/countries").then((res) => setCountryList(res?.data));
+  }, []);
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
@@ -102,13 +79,12 @@ function ApplicationFormDrawer({ open, onClose, onSubmit }) {
         >
           <TextField
             label="Full Name"
-            name="fullName"
+            name="applicant_name"
             fullWidth
             variant="outlined"
-            value={formData.fullName}
+            value={formData.applicant_name}
             onChange={handleChange}
           />
-
           <TextField
             label="Email"
             name="email"
@@ -130,7 +106,6 @@ function ApplicationFormDrawer({ open, onClose, onSubmit }) {
             value={formData.phone}
             onChange={handleChange}
           />
-
           <TextField
             label="Age"
             name="age"
@@ -140,24 +115,25 @@ function ApplicationFormDrawer({ open, onClose, onSubmit }) {
             value={formData.age}
             onChange={handleChange}
           />
-        </div>{" "}
+        </div>
         <div
           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
         >
           <TextField
             label="Country"
-            name="country"
+            name="country_id"
             select
             fullWidth
             variant="outlined"
-            value={formData.country}
+            value={formData.country_id}
             onChange={handleChange}
           >
-            <MenuItem value="UK">United Kingdom</MenuItem>
-            <MenuItem value="Canada">Canada</MenuItem>
-            <MenuItem value="Spain">Spain</MenuItem>
+            {countryList?.map((country) => (
+              <MenuItem key={country?.id} value={country?.id}>
+                {country?.name}
+              </MenuItem>
+            ))}
           </TextField>
-
           <TextField
             label="Course"
             name="course"
@@ -180,21 +156,20 @@ function ApplicationFormDrawer({ open, onClose, onSubmit }) {
         >
           <TextField
             label="12th Mark (%)"
-            name="twelfthMark"
+            name="plustwo_perc"
             type="number"
             fullWidth
             variant="outlined"
-            value={formData.twelfthMark}
+            value={formData.plustwo_perc}
             onChange={handleChange}
           />
-
           <TextField
             label="Degree Mark (%)"
-            name="degreeMark"
+            name="degree_perc"
             type="number"
             fullWidth
             variant="outlined"
-            value={formData.degreeMark}
+            value={formData.degree_perc}
             onChange={handleChange}
           />
         </div>
@@ -202,36 +177,21 @@ function ApplicationFormDrawer({ open, onClose, onSubmit }) {
           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
         >
           <TextField
-            label="Intake Month"
-            name="intakeMonth"
-            select
+            label="Intake"
+            name="year_intake"
             fullWidth
             variant="outlined"
-            value={formData.intakeMonth}
+            value={formData.year_intake}
             onChange={handleChange}
-          >
-            {months.map((month) => (
-              <MenuItem key={month} value={month}>
-                {month}
-              </MenuItem>
-            ))}
-          </TextField>
-
+          />
           <TextField
-            label="Intake Year"
-            name="intakeYear"
-            select
+            label="Year of passout"
+            name="year_of_pass_out"
             fullWidth
             variant="outlined"
-            value={formData.intakeYear}
+            value={formData.year_of_pass_out}
             onChange={handleChange}
-          >
-            {years.map((year) => (
-              <MenuItem key={year} value={year}>
-                {year}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
         </div>
         <Box
           sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
@@ -263,92 +223,98 @@ export default function ApplicationTable({
   loading,
 }) {
   const navigate = useNavigate();
-  const base = location.pathname;
   const currentRole = localStorage.getItem("role");
   const [open, setOpen] = useState(false);
 
   const handleSubmit = (formData) => {
-    console.log("New application submitted:", formData);
-    actionFunction();
+    actionFunction(formData);
   };
+
+  const hasData = applications && applications.length > 0;
 
   return (
     <div>
       <Box sx={{ minHeight: "100vh" }}>
         <Card style={{ borderRadius: "20px" }}>
           <CardContent>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mb: 2,
-                flexWrap: "wrap",
-                gap: 2,
-              }}
-            >
+            {/* Filters and Search - Only show if there is data or still loading */}
+            {(loading || hasData) && (
               <Box
                 sx={{
                   display: "flex",
-                  width: "100%",
                   justifyContent: "space-between",
+                  mb: 2,
+                  flexWrap: "wrap",
+                  gap: 2,
                 }}
               >
-                <div>
-                  <Button
-                    variant="outlined"
-                    startIcon={<SortIcon />}
-                    style={{ borderRadius: "20px", textTransform: "inherit" }}
-                  >
-                    Sort
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<FilterListIcon />}
-                    style={{
-                      borderRadius: "20px",
-                      textTransform: "inherit",
-                      marginLeft: "10px",
-                    }}
-                  >
-                    Filter
-                  </Button>
-                </div>
-                <div>
-                  <TextField
-                    size="small"
-                    placeholder="Search"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                    onChange={(e) => searchValue(e.target.value)}
-                  />
-                  {currentRole === "counsellor" && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    width: "100%",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
                     <Button
+                      variant="outlined"
+                      startIcon={<SortIcon />}
+                      style={{ borderRadius: "20px", textTransform: "inherit" }}
+                    >
+                      Sort
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<FilterListIcon />}
                       style={{
-                        backgroundColor: "#332C6A",
-                        color: "white",
+                        borderRadius: "20px",
                         textTransform: "inherit",
                         marginLeft: "10px",
                       }}
-                      onClick={() => setOpen(true)}
                     >
-                      Add
+                      Filter
                     </Button>
-                  )}
-                </div>
+                  </div>
+                  <div>
+                    <TextField
+                      size="small"
+                      placeholder="Search"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                      onChange={(e) => searchValue(e.target.value)}
+                    />
+                    {currentRole === "counsellor" && (
+                      <Button
+                        style={{
+                          backgroundColor: "#332C6A",
+                          color: "white",
+                          textTransform: "inherit",
+                          marginLeft: "10px",
+                        }}
+                        onClick={() => setOpen(true)}
+                      >
+                        Add
+                      </Button>
+                    )}
+                  </div>
+                </Box>
               </Box>
-            </Box>
+            )}
 
             <TableContainer sx={{ border: "1px solid #ddd", borderRadius: 2 }}>
               <Table>
                 <TableHead sx={{ bgcolor: "#f3f8fc" }}>
                   <TableRow>
                     {tabeHeaders?.map((headers) => (
-                      <TableCell sx={{ bgcolor: "#f3f8fc", fontWeight: 700 }}>
+                      <TableCell
+                        key={headers}
+                        sx={{ bgcolor: "#f3f8fc", fontWeight: 700 }}
+                      >
                         {headers}
                       </TableCell>
                     ))}
@@ -361,55 +327,54 @@ export default function ApplicationTable({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {loading
-                    ? Array.from({ length: 5 }).map((_, idx) => (
-                        <TableRow key={idx}>
-                          {tabeHeaders.map((_, i) => (
-                            <TableCell key={i}>
-                              <Skeleton
-                                variant="text"
-                                width="80%"
-                                height={24}
-                              />
-                            </TableCell>
-                          ))}
-                          <TableCell align="center">
-                            <Skeleton
-                              variant="circular"
-                              width={24}
-                              height={24}
-                            />
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <TableRow key={idx}>
+                        {tabeHeaders.map((_, i) => (
+                          <TableCell key={i}>
+                            <Skeleton variant="text" width="80%" height={24} />
                           </TableCell>
-                        </TableRow>
-                      ))
-                    : applications.map((app, idx) => (
-                        <TableRow
-                          key={idx}
-                          sx={{
-                            bgcolor: idx % 2 === 1 ? "#f8fcff" : "white",
-                          }}
-                          onClick={() =>
-                            navigate(`/application/uk/${app.name}}`)
-                          }
-                        >
-                          {app.map((cell, i) => (
-                            <TableCell
-                              key={i}
-                              onClick={() =>
-                                navigate(`/application/uk/${app.name}}`)
-                              }
-                            >
-                              {cell}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
+                        ))}
+                        <TableCell align="center">
+                          <Skeleton variant="circular" width={24} height={24} />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : !hasData ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={tabeHeaders.length + 1}
+                        align="center"
+                        sx={{ py: 6 }}
+                      >
+                        <Typography variant="h6" color="text.secondary">
+                          No Data Found!
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    applications.map((app, idx) => (
+                      <TableRow
+                        key={idx}
+                        sx={{
+                          bgcolor: idx % 2 === 1 ? "#f8fcff" : "white",
+                        }}
+                        onClick={() =>
+                          navigate(`/application/${app[0]}/${app[1]}}`)
+                        }
+                      >
+                        {app.map((cell, i) => (
+                          <TableCell key={i}>{cell}</TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
 
-            {/* Pagination */}
-            {pagination && (
+            {/* Pagination - Only show if there is data */}
+            {pagination && hasData && (
               <Box
                 sx={{
                   display: "flex",
@@ -424,7 +389,6 @@ export default function ApplicationTable({
                   onChange={(e, page) => onPageChange(page)}
                   color="primary"
                 />
-
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography>Showing</Typography>
                   <Select
@@ -446,7 +410,6 @@ export default function ApplicationTable({
         </Card>
       </Box>
 
-      {/* Drawer Component Corrected */}
       <ApplicationFormDrawer
         open={open}
         onClose={() => setOpen(false)}

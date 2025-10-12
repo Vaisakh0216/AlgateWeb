@@ -15,7 +15,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-// Import flags
 import UK from "../../assets/united-kingdom.png";
 import SI from "../../assets/slovenia.png";
 import SK from "../../assets/slovakia.png";
@@ -31,8 +30,10 @@ import GM from "../../assets/germany.png";
 import FC from "../../assets/france.png";
 import SG from "../../assets/singapore.png";
 import MY from "../../assets/malaysia.png";
-import { InputAdornment, TextField } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import IR from "../../assets/ireland.png";
+import BG from "../../assets/bulgaria.png";
+import CZ from "../../assets/czech.png";
+import HU from "../../assets/hungary.png";
 import ApplicationTable from "../../components/Table";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useNavigate } from "react-router-dom";
@@ -52,7 +53,7 @@ function SortableCard({ id, name, flag, onClick }) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    position: "relative", // for absolute drag handle
+    position: "relative",
     backgroundColor: "white",
     display: "flex",
     flexDirection: "column",
@@ -66,27 +67,23 @@ function SortableCard({ id, name, flag, onClick }) {
       : "0 4px 12px rgba(0, 0, 0, 0.08)",
     gap: 10,
     minWidth: "120px",
-    cursor: isDragging ? "grabbing" : "pointer", // pointer when not dragging
+    cursor: isDragging ? "grabbing" : "pointer",
     userSelect: "none",
     textTransform: "capitalize",
   };
 
-  console.log("the flag", flag);
-
   const handleCardClick = (e) => {
-    // If a drag is in progress, ignore the click (prevents accidental click after drag)
     if (isDragging) return;
     if (typeof onClick === "function") onClick(e);
+    localStorage.setItem("selectedCountry", id);
   };
 
   return (
     <div ref={setNodeRef} style={style} onClick={handleCardClick}>
-      {/* Drag handle: listeners/attributes applied here only */}
       <div
         {...listeners}
         {...attributes}
         onClick={(e) => {
-          // Prevent this click from bubbling up to the card's onClick
           e.stopPropagation();
         }}
         style={{
@@ -116,7 +113,6 @@ function SortableCard({ id, name, flag, onClick }) {
 }
 
 const AdminDashboard = () => {
-  // const [countries, setCountries] = useState(initialCountries);
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [countries, setCountries] = useState([]);
@@ -128,8 +124,10 @@ const AdminDashboard = () => {
   });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const currentRole = localStorage.getItem("role");
+  console.log("this is role", currentRole);
 
-  const tabeHeaders = [
+  const adminTabeHeaders = [
     "Student Id",
     "Student Name",
     "Course",
@@ -138,6 +136,16 @@ const AdminDashboard = () => {
     "Status",
     "Counsellor",
     "Processor",
+  ];
+
+  const processorTabeHeaders = [
+    "Student Id",
+    "Student Name",
+    "Course",
+    "University",
+    "Remarks",
+    "Status",
+    "Counsellor",
   ];
 
   const flagMap = {
@@ -156,26 +164,49 @@ const AdminDashboard = () => {
     FC,
     SG,
     MY,
+    IR,
+    BG,
+    CZ,
+    HU,
   };
 
   const getApplicationsList = (page, perPage) => {
+    setLoading(true);
     axiosInstance
-      .get("applications", {
-        params: { page, per_page: perPage, search: search },
-      })
+      .get(
+        `${
+          currentRole == "admin" ? "applications" : "applications/my-assigned"
+        }`,
+        {
+          params: { page, per_page: perPage, search: search },
+        }
+      )
       .then((res) => {
         setLoading(false);
-        const rows = res?.data?.data?.map((item) => [
-          item.id,
-          item.applicant_name,
-          item.course,
-          item.university,
-          "",
-          item.status,
-          item?.counselor?.name,
-          item?.processor?.name,
-          "",
-        ]);
+        const rows = res?.data?.data?.map((item) =>
+          currentRole == "admin"
+            ? [
+                item.id,
+                item.applicant_name,
+                item.course,
+                item.university,
+                "",
+                item.status,
+                item?.counselor?.name,
+                item?.processor?.name,
+                "",
+              ]
+            : [
+                item.id,
+                item.applicant_name,
+                item.course,
+                item.university,
+                "",
+                item.status,
+                item?.counselor?.name,
+                "",
+              ]
+        );
         setApplications(rows);
         setPagination(res?.data?.pagination);
       });
@@ -255,10 +286,9 @@ const AdminDashboard = () => {
         >
           <div
             style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 20,
-              justifyContent: "space-between",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+              gap: 5, // controls spacing between cards
             }}
           >
             {countries.map((country) => (
@@ -288,7 +318,9 @@ const AdminDashboard = () => {
       <div style={{ marginTop: "20px" }}>
         <ApplicationTable
           applications={applications}
-          tabeHeaders={tabeHeaders}
+          tabeHeaders={
+            currentRole == "admin" ? adminTabeHeaders : processorTabeHeaders
+          }
           pagination={pagination}
           onPageChange={(newPage) =>
             setPagination((prev) => ({ ...prev, current_page: newPage }))
