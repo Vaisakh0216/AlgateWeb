@@ -1,121 +1,238 @@
-import React from "react";
-import FormatBoldIcon from "@mui/icons-material/FormatBold";
-import FormatItalicIcon from "@mui/icons-material/FormatItalic";
-import InsertLinkIcon from "@mui/icons-material/InsertLink";
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Avatar,
+  Typography,
+  TextField,
+  Button,
+  IconButton,
+} from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import axiosInstance from "./config/axiosConfig";
 
-const CommentInputBox = () => {
-  const styles = {
-    container: {
-      backgroundColor: "#ffffff",
-      borderRadius: "12px",
-      padding: "24px",
-      maxWidth: "800px",
-      margin: "40px auto",
-      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.05)",
-      fontFamily: "Arial, sans-serif",
-    },
-    label: {
-      fontWeight: "bold",
-      marginBottom: "12px",
-      fontSize: "16px",
-    },
-    commentBox: {
-      border: "1px solid #3b82f6",
-      borderRadius: "8px",
-      padding: "16px",
-    },
-    header: {
-      display: "flex",
-      alignItems: "center",
-      marginBottom: "12px",
-    },
-    avatar: {
-      width: "36px",
-      height: "36px",
-      borderRadius: "50%",
-      marginRight: "12px",
-    },
-    userName: {
-      fontWeight: "bold",
-      fontSize: "14px",
-    },
-    textArea: {
-      width: "100%",
-      minHeight: "80px",
-      border: "none",
-      resize: "none",
-      outline: "none",
-      fontSize: "14px",
-      color: "#111827",
-      backgroundColor: "transparent",
-      fontFamily: "inherit",
-    },
-    divider: {
-      height: "1px",
-      backgroundColor: "#e5e7eb",
-      margin: "12px 0",
-    },
-    footer: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    iconGroup: {
-      display: "flex",
-      gap: "16px",
-      color: "#9ca3af",
-      fontSize: "16px",
-    },
-    button: {
-      backgroundColor: "#007bff",
-      color: "#fff",
-      padding: "8px 16px",
-      fontSize: "14px",
-      fontWeight: "bold",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-    },
+const CommentBox = ({ stepRecordId, existingComments = [] }) => {
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
+  console.log("this is comments 1", comments, newComment);
+
+  // ✅ Load existing comments
+  useEffect(() => {
+    setComments(existingComments || []);
+  }, [existingComments]);
+
+  // ✅ Add new comment
+  const handleAddComment = async () => {
+    // if (!newComment.trim()) return;
+    console.log("this is comments 2", newComment);
+
+    const tempComment = {
+      id: Date.now(), // temporary unique ID
+      name: "You",
+      initials: "Y",
+      created_at: "Just now",
+      comment: newComment,
+    };
+
+    // Optimistic update — show immediately
+    setComments((prev) => [tempComment, ...prev]);
+    setNewComment("");
+
+    try {
+      const res = await axiosInstance.post(
+        `application-steps/${stepRecordId}/update`,
+        {
+          comment: newComment,
+        }
+      );
+
+      // If backend returns the new comment, replace temp one with real one
+      if (res?.record?.logs) {
+        setComments((prev) => [
+          { ...res?.record?.logs },
+          ...prev.filter((c) => c.id !== tempComment.id),
+        ]);
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      // Roll back if API fails
+      setComments((prev) => prev.filter((c) => c.id !== tempComment.id));
+    }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.label}>Comments</div>
+    <Box
+      sx={{
+        width: "100%",
+        backgroundColor: "#fff",
+        borderRadius: "12px",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        maxHeight: "90vh",
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          borderBottom: "1px solid #eee",
+          padding: "16px 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography
+          sx={{ fontWeight: 600, fontSize: "16px", color: "#332C6A" }}
+        >
+          Comments
+        </Typography>
+        <Typography sx={{ fontSize: "13px", color: "#666" }}>
+          Step ID: {stepRecordId}
+        </Typography>
+      </Box>
 
-      <div style={styles.commentBox}>
-        {/* Header */}
-        <div style={styles.header}>
-          <img
-            src="https://i.pravatar.cc/36?img=1"
-            alt="avatar"
-            style={styles.avatar}
-          />
-          <div style={styles.userName}>Jishan</div>
-        </div>
+      {/* Comment List */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          padding: "16px 20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "18px",
+        }}
+      >
+        {comments.length === 0 ? (
+          <Typography
+            sx={{ color: "#888", textAlign: "center", mt: 2, fontSize: "14px" }}
+          >
+            No comments yet.
+          </Typography>
+        ) : (
+          comments.map(
+            (comment) =>
+              comment != null && (
+                <Box
+                  key={comment.id}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    borderBottom: "1px solid #f3f3f3",
+                    paddingBottom: "10px",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          bgcolor: "#332C6A",
+                          width: 28,
+                          height: 28,
+                          fontSize: "13px",
+                        }}
+                      >
+                        {comment.initials ||
+                          comment.name?.charAt(0)?.toUpperCase() ||
+                          "U"}
+                      </Avatar>
+                      <Box>
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            color: "#222",
+                          }}
+                        >
+                          {comment.name || "Unknown User"}
+                        </Typography>
+                        <Typography sx={{ fontSize: "12px", color: "#888" }}>
+                          {comment.created_at
+                            ? new Date(comment.created_at).toLocaleString()
+                            : "Just now"}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <IconButton size="small">
+                      <MoreVertIcon fontSize="small" sx={{ color: "#888" }} />
+                    </IconButton>
+                  </Box>
 
-        {/* Comment Text */}
-        <textarea
-          placeholder="Write your comment..."
-          style={styles.textArea}
-          defaultValue={
-            "I just tried this recipe and it was amazing! The instructions were clear and easy to follow, and the end result was delicious.\nI will definitely be making this again. Thanks for sharing!"
-          }
+                  <Typography
+                    sx={{ fontSize: "14px", color: "#333", ml: "38px" }}
+                  >
+                    {comment.comment}
+                  </Typography>
+                </Box>
+              )
+          )
+        )}
+      </Box>
+
+      {/* Input Box */}
+      <Box
+        sx={{
+          borderTop: "1px solid #eee",
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          backgroundColor: "#fafafa",
+        }}
+      >
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Enter your comment"
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          size="small"
+          sx={{
+            backgroundColor: "white",
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "10px",
+              "& fieldset": { borderColor: "#ddd" },
+              "&:hover fieldset": { borderColor: "#bbb" },
+              "&.Mui-focused fieldset": { borderColor: "#332C6A" },
+            },
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleAddComment();
+            }
+          }}
         />
-
-        <div style={styles.divider}></div>
-
-        {/* Footer */}
-        <div style={styles.footer}>
-          <div style={styles.iconGroup}>
-            <FormatBoldIcon />
-            <FormatItalicIcon />
-            <InsertLinkIcon />
-          </div>
-          <button style={styles.button}>Comment</button>
-        </div>
-      </div>
-    </div>
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: "#332C6A",
+            textTransform: "none",
+            borderRadius: "10px",
+            px: 3,
+            "&:hover": { backgroundColor: "#4b3ea3" },
+          }}
+          onClick={handleAddComment}
+        >
+          Send
+        </Button>
+      </Box>
+    </Box>
   );
 };
 
-export default CommentInputBox;
+export default CommentBox;

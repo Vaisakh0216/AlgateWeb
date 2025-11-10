@@ -5,6 +5,9 @@ import CountryList from "../pages/country";
 import Invoice from "../pages/invoice/invoice";
 import CounsellorDashboard from "../pages/dashboard/CounsellorDashboard";
 import AdminDashboard from "../pages/dashboard/AdminDashboard";
+import ServiceCharge from "../pages/serviceCharge";
+import ServiceChargeOverview from "../pages/serviceCharge/ServiceOverview";
+import UsersListing from "../pages/users";
 
 export function getChildrenByRole(role) {
   switch (role) {
@@ -22,10 +25,14 @@ export function getChildrenByRole(role) {
             { path: ":id/:childId", element: <ApplicationDetail /> },
           ],
         },
+        // {
+        //   path: "serviceCharge",
+        //   element: <ServiceCharge />,
+        // },
       ];
 
     case "admin":
-    case "process":
+    case "processor":
       return [
         {
           path: "dashboard",
@@ -47,6 +54,21 @@ export function getChildrenByRole(role) {
           path: "invoice",
           element: <Invoice />,
         },
+        {
+          path: "serviceCharge",
+          children: [
+            { index: true, element: <ServiceCharge /> },
+            { path: ":id", element: <ServiceChargeOverview /> },
+          ],
+        },
+        ...(role === "admin"
+          ? [
+              {
+                path: "users",
+                element: <UsersListing />,
+              },
+            ]
+          : []),
       ];
 
     default:

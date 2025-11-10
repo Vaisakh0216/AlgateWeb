@@ -3,6 +3,8 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import PublicIcon from "@mui/icons-material/Public";
 import ReceiptIcon from "@mui/icons-material/Receipt";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import PeopleIcon from "@mui/icons-material/People";
 
 export default function Sidebar() {
   const location = useLocation(); // Get current path
@@ -16,6 +18,11 @@ export default function Sidebar() {
             path: "/dashboard",
             icon: <DashboardIcon fontSize="small" />,
           },
+          // {
+          //   name: "Service Charge",
+          //   path: "/serviceCharge",
+          //   icon: <ManageAccountsIcon fontSize="small" />,
+          // },
         ]
       : [
           {
@@ -28,16 +35,30 @@ export default function Sidebar() {
             path: "/application",
             icon: <ListAltIcon fontSize="small" />,
           },
-          {
-            name: "Countries",
-            path: "/country",
-            icon: <PublicIcon fontSize="small" />,
-          },
+          // {
+          //   name: "Countries",
+          //   path: "/country",
+          //   icon: <PublicIcon fontSize="small" />,
+          // },
           {
             name: "Invoice",
             path: "/invoice",
             icon: <ReceiptIcon fontSize="small" />,
           },
+          {
+            name: "Service Charge",
+            path: "/serviceCharge",
+            icon: <ManageAccountsIcon fontSize="small" />,
+          },
+          ...(currentRole === "admin"
+            ? [
+                {
+                  name: "Users",
+                  path: "/users",
+                  icon: <PeopleIcon fontSize="small" />,
+                },
+              ]
+            : []),
         ];
 
   return (

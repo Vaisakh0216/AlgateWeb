@@ -67,6 +67,10 @@ export default function Login() {
       const target =
         res?.data?.user?.sys_role_id == 3 ? "/cdashboard" : "/dashboard";
 
+      axiosInstance.get("countries").then((res) => {
+        localStorage.setItem("countries", JSON.stringify(res?.data));
+      });
+
       navigate(target, { replace: true });
     } catch (error) {
       const message =

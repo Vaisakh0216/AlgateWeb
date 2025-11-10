@@ -38,6 +38,249 @@ import ApplicationTable from "../../components/Table";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../config/axiosConfig";
+import { useToast } from "../../components/Toast";
+
+// function ApplicationFormDrawer({ open, onClose, onSubmit }) {
+//   const [formData, setFormData] = useState({
+//     applicant_name: "",
+//     email: "",
+//     phone: "",
+//     age: "",
+//     university: "",
+//     country_id: "",
+//     plustwo_perc: "",
+//     degree_perc: "",
+//     year_of_pass_out: "",
+//     year_intake: "",
+//     offered_fee: "",
+//     amount_paid: "",
+//     fee_proof: null, // ✅ added field for file
+//   });
+
+//   const handleChange = (e) => {
+//     const { name, value, files } = e.target;
+//     if (name === "fee_proof") {
+//       setFormData((prev) => ({ ...prev, fee_proof: files[0] }));
+//     } else {
+//       setFormData((prev) => ({ ...prev, [name]: value }));
+//     }
+//   };
+
+//   const handleSubmit = () => {
+//     onSubmit?.(formData);
+//     onClose();
+//   };
+
+//   const [countryList, setCountryList] = useState([]);
+
+//   useEffect(() => {
+//     axiosInstance.get("/countries").then((res) => setCountryList(res?.data));
+//   }, []);
+
+//   return (
+//     <Drawer anchor="right" open={open} onClose={onClose}>
+//       <Box
+//         sx={{
+//           width: 600,
+//           padding: 3,
+//           display: "flex",
+//           flexDirection: "column",
+//           gap: 2,
+//         }}
+//       >
+//         <Typography variant="h6" fontWeight={600}>
+//           Add New Application
+//         </Typography>
+//         <Divider />
+//         <div
+//           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+//         >
+//           <TextField
+//             label="Full Name"
+//             name="applicant_name"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.applicant_name}
+//             onChange={handleChange}
+//           />
+//           <TextField
+//             label="Email"
+//             name="email"
+//             type="email"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.email}
+//             onChange={handleChange}
+//           />
+//         </div>
+//         <div
+//           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+//         >
+//           <TextField
+//             label="Phone"
+//             name="phone"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.phone}
+//             onChange={handleChange}
+//           />
+//           <TextField
+//             label="Age"
+//             name="age"
+//             type="number"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.age}
+//             onChange={handleChange}
+//           />
+//         </div>
+//         <div
+//           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+//         >
+//           <TextField
+//             label="Select Visa Type"
+//             name="country_id"
+//             select
+//             fullWidth
+//             variant="outlined"
+//             value={formData.country_id}
+//             onChange={handleChange}
+//           >
+//             <MenuItem value="student">Student Visa</MenuItem>
+//             <MenuItem value="job">Job Visa</MenuItem>
+//           </TextField>
+//           <TextField
+//             label="Country"
+//             name="country_id"
+//             select
+//             fullWidth
+//             variant="outlined"
+//             value={formData.country_id}
+//             onChange={handleChange}
+//           >
+//             {countryList?.map((country) => (
+//               <MenuItem key={country?.id} value={country?.id}>
+//                 {country?.name}
+//               </MenuItem>
+//             ))}
+//           </TextField>
+//         </div>
+//         <div
+//           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+//         >
+//           <TextField
+//             label="University"
+//             name="university"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.university}
+//             onChange={handleChange}
+//           />
+//           <TextField
+//             label="Course"
+//             name="course"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.course}
+//             onChange={handleChange}
+//           />
+//         </div>
+//         <div
+//           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+//         >
+//           <TextField
+//             label="12th Mark (%)"
+//             name="plustwo_perc"
+//             type="number"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.plustwo_perc}
+//             onChange={handleChange}
+//           />
+//           <TextField
+//             label="Degree Mark (%)"
+//             name="degree_perc"
+//             type="number"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.degree_perc}
+//             onChange={handleChange}
+//           />
+//         </div>
+//         <div
+//           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+//         >
+//           <TextField
+//             label="Intake"
+//             name="year_intake"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.year_intake}
+//             onChange={handleChange}
+//           />
+//           <TextField
+//             label="Year of passout"
+//             name="year_of_pass_out"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.year_of_pass_out}
+//             onChange={handleChange}
+//           />
+//         </div>
+//         <div
+//           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
+//         >
+//           <TextField
+//             label="Offered Registration Fee"
+//             name="offered_fee"
+//             type="number"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.offered_fee}
+//             onChange={handleChange}
+//           />
+//           <TextField
+//             label="Amount Student Paying Now"
+//             name="amount_paid"
+//             type="number"
+//             fullWidth
+//             variant="outlined"
+//             value={formData.amount_paid}
+//             onChange={handleChange}
+//           />
+//         </div>
+
+//         {/* ✅ Added File Picker */}
+//         <div>
+//           <Typography variant="body2" sx={{ mb: 1 }}>
+//             Upload Fee Payment Proof
+//           </Typography>
+//           <input
+//             type="file"
+//             name="fee_proof"
+//             accept="image/*,application/pdf"
+//             onChange={handleChange}
+//           />
+//         </div>
+
+//         <Box
+//           sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+//         >
+//           <Button onClick={onClose} variant="outlined" color="inherit">
+//             Cancel
+//           </Button>
+//           <Button
+//             onClick={handleSubmit}
+//             variant="contained"
+//             sx={{ bgcolor: "#332C6A" }}
+//           >
+//             Add
+//           </Button>
+//         </Box>
+//       </Box>
+//     </Drawer>
+//   );
+// }
 
 // --- Replace your SortableCard with this ---
 function SortableCard({ id, name, flag, onClick }) {
@@ -122,30 +365,40 @@ const AdminDashboard = () => {
     per_page: 10,
     total: 0,
   });
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const [filters, setFilters] = useState({
+    country_id: "",
+    status: "",
+    application_processor: "",
+    application_counselor: "",
+  });
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("desc");
   const [loading, setLoading] = useState(true);
   const currentRole = localStorage.getItem("role");
-  console.log("this is role", currentRole);
-
+  const countriesList = localStorage.getItem("countries");
+  const { showToast } = useToast();
   const adminTabeHeaders = [
     "Student Id",
     "Student Name",
+    "Country",
     "Course",
     "University",
-    "Remarks",
     "Status",
     "Counsellor",
     "Processor",
+    "Vendor",
   ];
 
   const processorTabeHeaders = [
     "Student Id",
     "Student Name",
+    "Country",
     "Course",
     "University",
-    "Remarks",
     "Status",
     "Counsellor",
+    "Vendor",
   ];
 
   const flagMap = {
@@ -178,7 +431,17 @@ const AdminDashboard = () => {
           currentRole == "admin" ? "applications" : "applications/my-assigned"
         }`,
         {
-          params: { page, per_page: perPage, search: search },
+          params: {
+            page,
+            per_page: perPage,
+            search: search,
+            sort_by: "created_at",
+            sort_direction: sortBy,
+            country_id: filters.country_id || undefined,
+            status: filters.status || undefined,
+            application_processor: filters.application_processor || undefined,
+            application_counselor: filters.application_counselor || undefined,
+          },
         }
       )
       .then((res) => {
@@ -188,22 +451,24 @@ const AdminDashboard = () => {
             ? [
                 item.id,
                 item.applicant_name,
+                item?.country?.name,
                 item.course,
                 item.university,
-                "",
                 item.status,
                 item?.counselor?.name,
                 item?.processor?.name,
+                item?.vendor,
                 "",
               ]
             : [
                 item.id,
                 item.applicant_name,
+                item?.country?.name,
                 item.course,
                 item.university,
-                "",
                 item.status,
                 item?.counselor?.name,
+                item?.vendor,
                 "",
               ]
         );
@@ -222,14 +487,11 @@ const AdminDashboard = () => {
       setCountries(rows);
     });
   };
-  console.log("this is search value", search);
 
   useEffect(() => {
     getApplicationsList(pagination.current_page, pagination.per_page);
     getCountriesList();
-  }, [pagination.current_page, pagination.per_page, search]);
-
-  console.log("the con", countries);
+  }, [pagination.current_page, pagination.per_page, search, sortBy, filters]);
 
   // sensors allow mouse + touch + keyboard drag
   const sensors = useSensors(
@@ -257,6 +519,26 @@ const AdminDashboard = () => {
         return updated;
       });
     }
+  };
+
+  const handleDeleteApplication = async (id) => {
+    await axiosInstance.delete(`/applications/${id}`).then((res) => {
+      showToast({
+        message: "Application deleted successfully!",
+        severity: "success",
+      });
+      getApplicationsList(pagination.current_page, pagination.per_page);
+    });
+  };
+
+  const updateApplication = (data, status) => {
+    axiosInstance.put(`/applications/${data?.id}`, data).then((res) => {
+      showToast({
+        message: "Application updated successfully!",
+        severity: "success",
+      });
+      getApplicationsList();
+    });
   };
 
   return (
@@ -333,7 +615,15 @@ const AdminDashboard = () => {
             }))
           }
           searchValue={setSearch}
+          setSortBy={setSortBy}
+          sortBy={sortBy}
           loading={loading}
+          deleteFunction={handleDeleteApplication}
+          actionFunction={updateApplication}
+          filterAnchorEl={filterAnchorEl}
+          filters={filters}
+          setFilters={setFilters}
+          setFilterAnchorEl={setFilterAnchorEl}
         />
       </div>
     </div>

@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 import ApplicationTable from "../../components/Table";
 import axiosInstance from "../../config/axiosConfig";
+import axios from "axios";
 
 function CounsellorDashboard() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("authToken");
   const tabeHeaders = [
     "Student Id",
     "Student Name",
     "Course",
     "University",
-    "Remarks",
     "Status",
   ];
 
@@ -22,7 +23,6 @@ function CounsellorDashboard() {
         item.applicant_name,
         item.course,
         item.university,
-        "",
         item.status,
         "",
       ]);
@@ -34,10 +34,24 @@ function CounsellorDashboard() {
     getApplicationsList();
   }, []);
 
-  const createApplication = (data) => {
-    axiosInstance.post("applications", data).then((res) => {
-      getApplicationsList();
-    });
+  const createApplication = (data, status) => {
+    console.log("this is status", data);
+    if (status == "create") {
+      axios
+        .post("https://algatecrm-api.v-nexus.com/api/applications", data, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          getApplicationsList();
+        });
+    } else {
+      axiosInstance.put(`/applications/${data?.id}`, data).then((res) => {
+        getApplicationsList();
+      });
+    }
   };
 
   return (
