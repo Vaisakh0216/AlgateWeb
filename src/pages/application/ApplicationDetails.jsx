@@ -1422,9 +1422,18 @@ export default function ApplicationDetail() {
         }) || []
     );
 
-    const regex = /\d+\)\s*([^0-9]+)/g;
+    // const regex = /\d+\)\s*([^0-9]+)/g;
+    // const matches = [...text.matchAll(regex)].map((m) => m[1].trim());
+    // const heading = text.split("1)")[0].trim();
+
+    // Capture each numbered item including digits inside the item text.
+    // Match "N) <anything until next M) or end-of-string>"
+    const regex = /\d+\)\s*([\s\S]*?)(?=\d+\)|$)/g;
     const matches = [...text.matchAll(regex)].map((m) => m[1].trim());
-    const heading = text.split("1)")[0].trim();
+
+    // If there is any text before the first numbered token, treat that as heading.
+    const headingMatch = text.split(/\d+\)/)[0].trim();
+    const heading = headingMatch && headingMatch.length ? headingMatch : "";
 
     return (
       <>
@@ -1850,7 +1859,7 @@ export default function ApplicationDetail() {
         </Box>
 
         {/* Sticky Footer */}
-        {selectedApp?.status == "open" && (
+        {selectedApp?.status == "open" && currentRole != "counsellor" && (
           <div
             style={{
               position: "sticky",

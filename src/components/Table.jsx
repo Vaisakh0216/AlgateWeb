@@ -174,6 +174,11 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
       newErrors.fee_proof = "Payment proof is required";
 
     setErrors(newErrors);
+    if (isEditMode) {
+      delete newErrors.offered_fee;
+      delete newErrors.amount_paid;
+      delete newErrors.fee_proof;
+    }
     return Object.keys(newErrors).length === 0;
   };
 
