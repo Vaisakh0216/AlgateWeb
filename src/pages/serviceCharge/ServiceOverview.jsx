@@ -445,6 +445,11 @@ import {
   Divider,
   Modal,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
@@ -507,6 +512,12 @@ const ServiceChargeOverview = () => {
     note: "",
   });
 
+  // NEW: state for delete confirmation
+  const [confirmDelete, setConfirmDelete] = useState({
+    open: false,
+    id: null,
+  });
+
   const handleOpenModal = (stage) => {
     setSelectedStage(stage);
     // clear editing states when opening a new modal
@@ -566,15 +577,13 @@ const ServiceChargeOverview = () => {
         service_charge_id: selectedStage.id,
       })
       .then((res) => {
-        // 2️⃣ Update modal transactions immediately (so it appears without closing)
         const updatedPayment = {
           ...newPayment,
           amount: Number(newPayment.amount),
-          id: res?.data?.id || Date.now(), // fallback ID for new entry
+          id: res?.data?.id || Date.now(),
           date: newPayment.date,
         };
 
-        // Update selectedStage with new transaction
         setSelectedStage((prev) => ({
           ...prev,
           transactions: [...(prev?.transactions || []), updatedPayment],
@@ -591,27 +600,21 @@ const ServiceChargeOverview = () => {
           severity: "error",
         });
       });
-    // setCharges(updated);
     setNewPayment({ amount: "", date: "", mode: "", note: "" });
   };
 
-  // NEW: start editing a transaction
   const startEditPayment = (p) => {
     setEditingPaymentId(p.id);
-    // Ensure date input uses yyyy-MM-dd if possible
     let dateVal = "";
     try {
       if (p?.date) {
-        // attempt to normalize
         const parsed = parseISO(p.date);
-        // build yyyy-mm-dd
         const yyyy = parsed.getFullYear();
         const mm = String(parsed.getMonth() + 1).padStart(2, "0");
         const dd = String(parsed.getDate()).padStart(2, "0");
         dateVal = `${yyyy}-${mm}-${dd}`;
       }
     } catch (e) {
-      // fallback to raw value
       dateVal = p?.date || "";
     }
     setEditingPayment({
@@ -622,13 +625,11 @@ const ServiceChargeOverview = () => {
     });
   };
 
-  // NEW: cancel editing
   const cancelEdit = () => {
     setEditingPaymentId(null);
     setEditingPayment({ amount: "", date: "", mode: "", note: "" });
   };
 
-  // NEW: save edited payment
   const saveEditedPayment = () => {
     if (!editingPaymentId) return;
 
@@ -644,7 +645,6 @@ const ServiceChargeOverview = () => {
     axiosInstance
       .post(`updateServiceChargeTransaction`, payload)
       .then((res) => {
-        // update selectedStage.transactions locally
         setSelectedStage((prev) => {
           const updatedTransactions = (prev?.transactions || []).map((t) =>
             t.id === editingPaymentId
@@ -664,7 +664,6 @@ const ServiceChargeOverview = () => {
           message: "Transaction updated successfully!",
           severity: "success",
         });
-        // refresh overview to keep everything in sync
         getApplicationOverview();
         cancelEdit();
       })
@@ -676,12 +675,10 @@ const ServiceChargeOverview = () => {
       });
   };
 
-  // NEW: delete payment
   const deletePayment = (id) => {
     axiosInstance
-      .delete(`deleteServiceChargeTransaction`, { id })
+      .delete(`deleteServiceChargeTransaction/${id}`)
       .then((res) => {
-        // remove locally
         setSelectedStage((prev) => ({
           ...prev,
           transactions: (prev?.transactions || []).filter((t) => t.id !== id),
@@ -691,7 +688,6 @@ const ServiceChargeOverview = () => {
           severity: "success",
         });
         getApplicationOverview();
-        // if deleting the one being edited, cancel edit
         if (editingPaymentId === id) cancelEdit();
       })
       .catch((err) => {
@@ -716,7 +712,6 @@ const ServiceChargeOverview = () => {
     (sum, charge) => sum + Number(charge?.expected_amount || 0),
     0
   );
-  // * 1.2;
 
   const totalFeeExc = applicationOverview?.service_charges?.reduce(
     (sum, charge) => sum + Number(charge?.expected_amount || 0),
@@ -743,7 +738,6 @@ const ServiceChargeOverview = () => {
           padding: "20px",
         }}
       >
-        {/* Student Info */}
         <Typography
           variant="h5"
           fontWeight={700}
@@ -758,7 +752,6 @@ const ServiceChargeOverview = () => {
           {applicationOverview?.university}
         </Typography>
 
-        {/* Summary */}
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={8}
@@ -792,7 +785,6 @@ const ServiceChargeOverview = () => {
 
         <Divider sx={{ mb: 2 }} />
 
-        {/* Table */}
         <TableContainer
           component={Paper}
           variant="outlined"
@@ -825,7 +817,7 @@ const ServiceChargeOverview = () => {
                         defaultValue={c.expected_amount}
                         onBlur={(e) =>
                           updateExpectedAmount(index, e.target.value)
-                        } // 👈 triggers only on blur
+                        }
                         sx={{
                           width: 100,
                           "& .MuiInputBase-input": { textAlign: "right" },
@@ -889,7 +881,6 @@ const ServiceChargeOverview = () => {
               </IconButton>
             </Stack>
 
-            {/* Payment History */}
             {selectedPayments.length > 0 ? (
               <TableContainer
                 component={Paper}
@@ -926,7 +917,6 @@ const ServiceChargeOverview = () => {
                                 InputLabelProps={{ shrink: true }}
                               />
                             ) : (
-                              // safe format: try parseISO else show raw
                               (() => {
                                 try {
                                   return format(
@@ -1025,14 +1015,16 @@ const ServiceChargeOverview = () => {
                                   onClick={() => startEditPayment(p)}
                                   title="Edit"
                                 >
-                                  <EditIcon />
+                                  <EditIcon fontSize="small" />
                                 </IconButton>
                                 <IconButton
                                   size="small"
-                                  onClick={() => deletePayment(p.id)}
+                                  onClick={() =>
+                                    setConfirmDelete({ open: true, id: p.id })
+                                  }
                                   title="Delete"
                                 >
-                                  <DeleteIcon />
+                                  <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </Stack>
                             )}
@@ -1051,7 +1043,6 @@ const ServiceChargeOverview = () => {
 
             <Divider sx={{ my: 2 }} />
 
-            {/* Add New Payment */}
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
               Add New Payment
             </Typography>
@@ -1108,6 +1099,44 @@ const ServiceChargeOverview = () => {
                 Save Payment
               </Button>
             </Stack>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+              open={confirmDelete.open}
+              onClose={() => setConfirmDelete({ open: false, id: null })}
+            >
+              <DialogTitle sx={{ fontSize: "16px", fontWeight: "700" }}>
+                Confirm Deletion
+              </DialogTitle>
+              <DialogContent>
+                <DialogContentText sx={{ fontSize: "15px" }}>
+                  Are you sure you want to delete this transaction?.
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={() => setConfirmDelete({ open: false, id: null })}
+                  color="inherit"
+                  style={{ textTransform: "inherit" }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    deletePayment(confirmDelete.id);
+                    setConfirmDelete({ open: false, id: null });
+                  }}
+                  color="error"
+                  variant="contained"
+                  style={{
+                    textTransform: "inherit",
+                    backgroundColor: "#332C6A",
+                  }}
+                >
+                  Delete
+                </Button>
+              </DialogActions>
+            </Dialog>
           </Box>
         </Modal>
       </Box>

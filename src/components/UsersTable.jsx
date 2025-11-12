@@ -553,7 +553,7 @@ export default function UsersTable({
         <DialogContent>
           <DialogContentText>
             Are you sure you want to delete{" "}
-            <strong>{userToDelete?.name}</strong>? This action cannot be undone.
+            <strong>{userToDelete?.name}</strong>? .
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -568,7 +568,7 @@ export default function UsersTable({
             color="error"
             variant="contained"
             disabled={deleting}
-            sx={{ textTransform: "inherit" }}
+            sx={{ textTransform: "inherit", backgroundColor: "#332C6A" }}
           >
             {deleting ? "Deleting..." : "Delete"}
           </Button>
