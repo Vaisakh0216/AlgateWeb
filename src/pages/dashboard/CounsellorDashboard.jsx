@@ -10,6 +10,7 @@ function CounsellorDashboard() {
   const tabeHeaders = [
     "Student Id",
     "Student Name",
+    "Country",
     "Course",
     "University",
     "Status",
@@ -21,6 +22,7 @@ function CounsellorDashboard() {
       const rows = res?.data?.data?.map((item) => [
         item.id,
         item.applicant_name,
+        item.country.name,
         item.course,
         item.university,
         item.status,

@@ -408,7 +408,7 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
               }}
             >
               <TextField
-                label="University"
+                label="University / College / Institute"
                 name="university"
                 fullWidth
                 variant="outlined"
