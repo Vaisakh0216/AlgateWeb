@@ -544,7 +544,7 @@ const AdminDashboard = () => {
   return (
     <div>
       <h1 style={{ color: "#332C6A", fontSize: "26px", fontWeight: "600" }}>
-        Welcome, Admin!
+        {currentRole == "admin" ? "Welcome, Admin!" : "Welcome, Counsellor!"}
       </h1>
       <h3
         style={{
