@@ -17,7 +17,7 @@ const UsersListing = () => {
     role_id: "",
   });
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("desc");
+  const [sortBy, setSortBy] = useState("asc");
 
   const tabeHeaders = [
     "User Id",
