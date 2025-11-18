@@ -990,7 +990,7 @@ export default function ApplicationTable({
                                 );
                               }
 
-                              return value || "-";
+                              return i === 0 ? idx + 1 : value || "-";
                             })()}
                           </TableCell>
                         ))}
