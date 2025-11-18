@@ -979,7 +979,9 @@ export default function UsersTable({
                       }
                     >
                       {app.display.map((cell, i) => (
-                        <TableCell key={i}>{cell}</TableCell>
+                        <TableCell key={i}>
+                          {i === 0 ? idx + 1 : cell}
+                        </TableCell>
                       ))}
                       <TableCell align="center">
                         <IconButton

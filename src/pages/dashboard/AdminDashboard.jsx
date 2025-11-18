@@ -373,7 +373,7 @@ const AdminDashboard = () => {
     application_counselor: "",
   });
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("desc");
+  const [sortBy, setSortBy] = useState("asc");
   const [loading, setLoading] = useState(true);
   const currentRole = localStorage.getItem("role");
   const countriesList = localStorage.getItem("countries");
