@@ -15,7 +15,7 @@ const ServiceCharge = () => {
     "Course",
     "University",
     "Pending Amount",
-    "Totak Amount",
+    "Total Amount",
   ];
 
   const getApplicationsList = () => {

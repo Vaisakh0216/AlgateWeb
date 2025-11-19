@@ -32,6 +32,29 @@ const Application = () => {
     "Status",
   ];
 
+  const adminTabeHeaders = [
+    "Student Id",
+    "Student Name",
+    "Country",
+    "Course",
+    "University",
+    "Status",
+    "Counsellor",
+    "Processor",
+    "Vendor",
+  ];
+
+  const processorTabeHeaders = [
+    "Student Id",
+    "Student Name",
+    "Country",
+    "Course",
+    "University",
+    "Status",
+    "Counsellor",
+    "Vendor",
+  ];
+
   const getCountriesList = () => {
     axiosInstance.get("countries").then((res) => {
       const rows = res?.data?.map((item) => ({
@@ -69,15 +92,32 @@ const Application = () => {
       )
       .then((res) => {
         setLoading(false);
-        const rows = res?.data?.data?.map((item) => [
-          item.id,
-          item.applicant_name,
-          item?.country?.name,
-          item.course,
-          item.university,
-          item.status,
-          "",
-        ]);
+        const rows = res?.data?.data?.map((item) =>
+          currentRole == "admin"
+            ? [
+                item.id,
+                item.applicant_name,
+                item?.country?.name,
+                item.course,
+                item.university,
+                item.status,
+                item?.counselor?.name,
+                item?.processor?.name,
+                item?.vendor,
+                "",
+              ]
+            : [
+                item.id,
+                item.applicant_name,
+                item?.country?.name,
+                item.course,
+                item.university,
+                item.status,
+                item?.counselor?.name,
+                item?.vendor,
+                "",
+              ]
+        );
         setApplications(rows);
         setPagination(res?.data?.pagination);
       });
@@ -102,7 +142,9 @@ const Application = () => {
       </h3>
       <ApplicationTable
         applications={applications}
-        tabeHeaders={tabeHeaders}
+        tabeHeaders={
+          currentRole == "admin" ? adminTabeHeaders : processorTabeHeaders
+        }
         loading={loading}
         filterAnchorEl={filterAnchorEl}
         filters={filters}
