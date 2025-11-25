@@ -26,6 +26,10 @@ import {
   DialogContentText,
   DialogTitle,
   Menu,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -37,7 +41,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../config/axiosConfig";
 import CreateIcon from "@mui/icons-material/Create";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-
+import MoveUpIcon from "@mui/icons-material/MoveUp";
 // -----------------------------
 // Drawer Component
 // -----------------------------
@@ -694,6 +698,16 @@ export default function ApplicationTable({
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const countries = localStorage.getItem("countries");
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [allUsers, setAllUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedApplicationForTransfer, setSelectedApplicationForTransfer] =
+    useState(null);
+  const [confirmTransferDialog, setConfirmTransferDialog] = useState({
+    open: false,
+    user: null,
+  });
 
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
@@ -726,6 +740,67 @@ export default function ApplicationTable({
   };
 
   const hasData = applications && applications.length > 0;
+
+  // NEW: fetch users (once, when transfer dialog first opens)
+  const fetchUsers = async () => {
+    if (allUsers.length) return;
+    try {
+      setLoadingUsers(true);
+      const res = await axiosInstance.get("/users", {
+        params: {
+          role_id: 4,
+        },
+      }); // adjust endpoint if needed
+      // expect array of { id, name, email, ... }
+      setAllUsers(res?.data?.data || []);
+    } catch (err) {
+      setAllUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // NEW: open transfer dialog for transdering application
+  const handleOpenTransferDialog = async (app, event) => {
+    event.stopPropagation();
+    setSelectedApplicationForTransfer(app);
+    setUserDialogOpen(true);
+    await fetchUsers();
+  };
+
+  // NEW: filtered users based on search
+  const filteredUsers = allUsers.filter((u) => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return true;
+    const name = (u.name || "").toLowerCase();
+    const email = (u.email || "").toLowerCase();
+    return name.includes(q) || email.includes(q);
+  });
+
+  // NEW: confirm transfer handler
+  const handleConfirmTransfer = () => {
+    if (!selectedApplicationForTransfer || !confirmTransferDialog.user) return;
+
+    const app = selectedApplicationForTransfer;
+
+    const applicationId =
+      app && typeof app === "object" && !Array.isArray(app)
+        ? app.id
+        : Array.isArray(app)
+        ? app[0]
+        : undefined;
+
+    const userId = confirmTransferDialog.user.id;
+
+    // You can handle "transfer" in parent via actionFunction
+    actionFunction(
+      { application_id: applicationId, user_id: userId },
+      "transfer"
+    );
+
+    setConfirmTransferDialog({ open: false, user: null });
+    setSelectedApplicationForTransfer(null);
+  };
 
   return (
     <div>
@@ -990,7 +1065,11 @@ export default function ApplicationTable({
                                 );
                               }
 
-                              return i === 0 ? idx + 1 : value || "-";
+                              return i === 0
+                                ? (pagination.current_page - 1) *
+                                    pagination.per_page +
+                                    (idx + 1)
+                                : value;
                             })()}
                           </TableCell>
                         ))}
@@ -1021,6 +1100,11 @@ export default function ApplicationTable({
                             }}
                           >
                             <CreateIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            onClick={(e) => handleOpenTransferDialog(app, e)}
+                          >
+                            <MoveUpIcon fontSize="small" />
                           </IconButton>
                         </TableCell>
                       </TableRow>
@@ -1104,6 +1188,120 @@ export default function ApplicationTable({
             sx={{ backgroundColor: "#332C6A", textTransform: "inherit" }}
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* NEW: user selection dialog for transfer */}
+      <Dialog
+        open={userDialogOpen}
+        onClose={() => {
+          setUserDialogOpen(false);
+          setUserSearch("");
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontSize: "16px", fontWeight: 700 }}>
+          Transfer Application
+        </DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search user by name or email"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            sx={{ mb: 2 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {loadingUsers ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                py: 3,
+              }}
+            >
+              <CircularProgress size={28} />
+            </Box>
+          ) : filteredUsers.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No users found.
+            </Typography>
+          ) : (
+            <List dense>
+              {filteredUsers.map((user) => (
+                <ListItem
+                  key={user.id}
+                  button
+                  onClick={() => {
+                    setUserDialogOpen(false);
+                    setConfirmTransferDialog({ open: true, user });
+                  }}
+                >
+                  <ListItemText
+                    primary={user.name}
+                    secondary={user.email}
+                    primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }}
+                    secondaryTypographyProps={{ fontSize: 12 }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setUserDialogOpen(false);
+              setUserSearch("");
+            }}
+            sx={{ textTransform: "inherit" }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* NEW: confirmation dialog for transfer */}
+      <Dialog
+        open={confirmTransferDialog.open}
+        onClose={() => setConfirmTransferDialog({ open: false, user: null })}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontSize: "16px", fontWeight: "700" }}>
+          Confirm Transfer
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ fontSize: "15px" }}>
+            {`Would you like to transfer this application to ${
+              confirmTransferDialog.user?.name || "this user"
+            }?`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() =>
+              setConfirmTransferDialog({ open: false, user: null })
+            }
+            color="inherit"
+            sx={{ textTransform: "inherit" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmTransfer}
+            variant="contained"
+            sx={{ backgroundColor: "#332C6A", textTransform: "inherit" }}
+          >
+            Yes, Transfer
           </Button>
         </DialogActions>
       </Dialog>

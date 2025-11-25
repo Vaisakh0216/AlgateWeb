@@ -532,13 +532,28 @@ const AdminDashboard = () => {
   };
 
   const updateApplication = (data, status) => {
-    axiosInstance.put(`/applications/${data?.id}`, data).then((res) => {
-      showToast({
-        message: "Application updated successfully!",
-        severity: "success",
+    console.log("this is data", data, status);
+    if (status == "transfer") {
+      axiosInstance
+        .post(`applications/${data?.application_id}/transfer`, {
+          new_processor_id: data?.user_id,
+        })
+        .then((res) => {
+          showToast({
+            message: "Application updated successfully!",
+            severity: "success",
+          });
+          getApplicationsList();
+        });
+    } else {
+      axiosInstance.put(`/applications/${data?.id}`, data).then((res) => {
+        showToast({
+          message: "Application updated successfully!",
+          severity: "success",
+        });
+        getApplicationsList();
       });
-      getApplicationsList();
-    });
+    }
   };
 
   return (

@@ -8,28 +8,61 @@ const ServiceCharge = () => {
   const [applications, setApplications] = useState([]);
   const para = useParams();
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    per_page: 10,
+    total: 0,
+  });
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const [filters, setFilters] = useState({
+    country_id: "",
+    status: "",
+    application_processor: "",
+    application_counselor: "",
+  });
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("asc");
+  const currentRole = localStorage.getItem("role");
+  const currentUserInfo = localStorage.getItem("userInfo");
 
   const tabeHeaders = [
     "Student Id",
     "Student Name",
     "Course",
     "University",
-    "Pending Amount",
     "Total Amount",
+    "Paid Amount",
+    "Pending Amount",
   ];
 
-  const getApplicationsList = () => {
-    axiosInstance.get(`applications`).then((res) => {
-      setLoading(false);
-      const rows = res?.data?.data?.map((item) => [
-        item.id,
-        item.applicant_name,
-        item.course,
-        item.university,
-        item?.service_charges?.reduce(
-          (sum, charge) => sum + Number(charge?.expected_amount || 0),
-          0
-        ) -
+  const getApplicationsList = (page, perPage) => {
+    setLoading(true);
+    axiosInstance
+      .get("applications", {
+        params: {
+          page,
+          per_page: perPage,
+          search: search,
+          sort_by: "created_at",
+          sort_direction: sortBy,
+          country_id: filters.country_id || undefined,
+          status: filters.status || undefined,
+          application_processor:
+            currentRole == "admin" ? "" : JSON.parse(currentUserInfo)?.id,
+        },
+      })
+      .then((res) => {
+        setLoading(false);
+        const rows = res?.data?.data?.map((item) => [
+          item.id,
+          item.applicant_name,
+          item.course,
+          item.university,
+          item?.service_charges?.reduce(
+            (sum, charge) => sum + Number(charge?.expected_amount || 0),
+            0
+          ),
           item?.service_charges?.reduce(
             (sum, charge) =>
               sum +
@@ -39,19 +72,28 @@ const ServiceCharge = () => {
               ) || 0),
             0
           ),
-        item?.service_charges?.reduce(
-          (sum, charge) => sum + Number(charge?.expected_amount || 0),
-          0
-        ),
-        ,
-      ]);
-      setApplications(rows);
-    });
+          item?.service_charges?.reduce(
+            (sum, charge) => sum + Number(charge?.expected_amount || 0),
+            0
+          ) -
+            item?.service_charges?.reduce(
+              (sum, charge) =>
+                sum +
+                (charge?.transactions?.reduce(
+                  (tranSum, trans) => tranSum + Number(trans?.amount || 0),
+                  0
+                ) || 0),
+              0
+            ),
+        ]);
+        setApplications(rows);
+        setPagination(res?.data?.pagination);
+      });
   };
 
   useEffect(() => {
-    getApplicationsList();
-  }, []);
+    getApplicationsList(pagination.current_page, pagination.per_page);
+  }, [pagination.current_page, pagination.per_page, search, sortBy, filters]);
 
   return (
     <div>
@@ -69,6 +111,24 @@ const ServiceCharge = () => {
         applications={applications}
         tabeHeaders={tabeHeaders}
         loading={loading}
+        filterAnchorEl={filterAnchorEl}
+        filters={filters}
+        setFilters={setFilters}
+        setFilterAnchorEl={setFilterAnchorEl}
+        pagination={pagination}
+        onPageChange={(newPage) =>
+          setPagination((prev) => ({ ...prev, current_page: newPage }))
+        }
+        onPerPageChange={(newPerPage) =>
+          setPagination((prev) => ({
+            ...prev,
+            per_page: newPerPage,
+            current_page: 1,
+          }))
+        }
+        searchValue={setSearch}
+        setSortBy={setSortBy}
+        sortBy={sortBy}
       />
     </div>
   );

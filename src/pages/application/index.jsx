@@ -22,7 +22,7 @@ const Application = () => {
     application_counselor: "",
   });
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("desc");
+  const [sortBy, setSortBy] = useState("asc");
   const tabeHeaders = [
     "Student Id",
     "Student Name",

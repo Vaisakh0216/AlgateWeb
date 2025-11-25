@@ -173,7 +173,13 @@ export default function ServiceChargeTable({
                         onClick={() => navigate(`/serviceCharge/${app[0]}`)}
                       >
                         {app.map((cell, i) => (
-                          <TableCell key={i}>{cell}</TableCell>
+                          <TableCell key={i}>
+                            {i === 0
+                              ? (pagination.current_page - 1) *
+                                  pagination.per_page +
+                                (idx + 1)
+                              : cell}
+                          </TableCell>
                         ))}
                       </TableRow>
                     ))
