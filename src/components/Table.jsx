@@ -778,8 +778,24 @@ export default function ApplicationTable({
   });
 
   // NEW: confirm transfer handler
+  // NEW: confirm transfer handler (SAFE)
   const handleConfirmTransfer = () => {
-    if (!selectedApplicationForTransfer || !confirmTransferDialog.user) return;
+    // Make sure we actually have selected application and user
+    if (!selectedApplicationForTransfer || !confirmTransferDialog.user) {
+      setConfirmTransferDialog({ open: false, user: null });
+      setSelectedApplicationForTransfer(null);
+      return;
+    }
+
+    // Make sure actionFunction is a valid function
+    if (typeof actionFunction !== "function") {
+      console.error(
+        "actionFunction is not a function. Please check the prop passed to <ApplicationTable />"
+      );
+      setConfirmTransferDialog({ open: false, user: null });
+      setSelectedApplicationForTransfer(null);
+      return;
+    }
 
     const app = selectedApplicationForTransfer;
 
@@ -792,7 +808,7 @@ export default function ApplicationTable({
 
     const userId = confirmTransferDialog.user.id;
 
-    // You can handle "transfer" in parent via actionFunction
+    // Call parent handler to actually do the transfer
     actionFunction(
       { application_id: applicationId, user_id: userId },
       "transfer"

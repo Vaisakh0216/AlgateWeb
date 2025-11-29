@@ -34,6 +34,17 @@ import IR from "../../assets/ireland.png";
 import BG from "../../assets/bulgaria.png";
 import CZ from "../../assets/czech.png";
 import HU from "../../assets/hungary.png";
+import DXB from "../../assets/dubai.png";
+import ND from "../../assets/netherlands.png";
+import AL from "../../assets/albania.png";
+import NZ from "../../assets/newzealand.png";
+import AUS from "../../assets/australia.png";
+import USA from "../../assets/unitedstates.png";
+import UB from "../../assets/uzbekistan.png";
+import GE from "../../assets/georgia.png";
+import KZ from "../../assets/kazakhstan.png";
+import KY from "../../assets/kyrgyzstan.png";
+
 import ApplicationTable from "../../components/Table";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useNavigate } from "react-router-dom";
@@ -421,6 +432,16 @@ const AdminDashboard = () => {
     BG,
     CZ,
     HU,
+    DXB,
+    ND,
+    AL,
+    NZ,
+    AUS,
+    USA,
+    UB,
+    GE,
+    KZ,
+    KY,
   };
 
   const getApplicationsList = (page, perPage) => {
@@ -633,8 +654,8 @@ const AdminDashboard = () => {
           setSortBy={setSortBy}
           sortBy={sortBy}
           loading={loading}
-          deleteFunction={handleDeleteApplication}
           actionFunction={updateApplication}
+          deleteFunction={handleDeleteApplication}
           filterAnchorEl={filterAnchorEl}
           filters={filters}
           setFilters={setFilters}
