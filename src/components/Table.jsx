@@ -36,18 +36,29 @@ import {
   FilterList as FilterListIcon,
   Sort as SortIcon,
   DeleteOutline as DeleteOutlineIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../config/axiosConfig";
 import CreateIcon from "@mui/icons-material/Create";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MoveUpIcon from "@mui/icons-material/MoveUp";
+
 // -----------------------------
 // Drawer Component
 // -----------------------------
-function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
+function ApplicationFormDrawer({
+  open,
+  onClose,
+  onSubmit,
+  editData,
+  mode = "create",
+}) {
   const isEditMode = Boolean(editData);
+  const isCreateMode = !isEditMode;
   const currentRole = localStorage.getItem("role");
+
+  const [isReadOnly, setIsReadOnly] = useState(mode === "view");
 
   const [formData, setFormData] = useState({
     applicant_name: "",
@@ -111,6 +122,11 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
   const [loadingDefaults, setLoadingDefaults] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // keep read-only state in sync with mode/open
+  useEffect(() => {
+    setIsReadOnly(mode === "view");
+  }, [mode, open]);
+
   useEffect(() => {
     axiosInstance
       .get("/countries")
@@ -147,8 +163,8 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
             degree_perc: d.degree_perc ?? "",
             year_of_pass_out: d.year_of_pass_out ?? "",
             year_intake: d.year_intake ?? "",
-            offered_fee: d.offered_fee ?? "",
-            amount_paid: d.amount_paid ?? "",
+            offered_fee: d?.service_charges?.[0]?.expected_amount ?? "",
+            amount_paid: d?.service_charges?.[0]?.paid_amount ?? "",
             course: d.course ?? "",
             vendor: d.vendor ?? "",
             visa_type: d.visa_type ?? "",
@@ -163,30 +179,73 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
 
   const validateForm = () => {
     const newErrors = {};
+
     Object.keys(formData).forEach((key) => {
+      // fields that are never required
       if (
-        key !== "receipt_url" &&
-        key !== "vendor" &&
-        key !== "status" &&
-        key !== "service_charges"
+        key === "receipt_url" ||
+        key === "vendor" ||
+        key === "status" ||
+        key === "service_charges" ||
+        key === "fee_proof" // proof is optional now
       ) {
-        if (!formData[key]) newErrors[key] = "This field is required";
+        return;
+      }
+
+      // in edit mode, do not require offered_fee or amount_paid
+      if (isEditMode && (key === "offered_fee" || key === "amount_paid")) {
+        return;
+      }
+
+      if (!formData[key]) {
+        newErrors[key] = "This field is required";
       }
     });
 
-    if (!isEditMode && !formData.fee_proof)
-      newErrors.fee_proof = "Payment proof is required";
+    if (formData.email) {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
+    }
+
+    // Age validation (must be > 0 and <= 150)
+    if (formData.age) {
+      const ageNum = Number(formData.age);
+      if (Number.isNaN(ageNum) || ageNum <= 0) {
+        newErrors.age = "Please enter a valid age";
+      } else if (ageNum > 150) {
+        newErrors.age = "Age cannot be greater than 150";
+      }
+    }
+
+    // Amount validation (amount_paid must be LESS than offered_fee) – only on create
+    if (!isEditMode && formData.offered_fee && formData.amount_paid) {
+      const offered = Number(formData.offered_fee);
+      const paid = Number(formData.amount_paid);
+
+      if (Number.isNaN(offered) || offered <= 0) {
+        newErrors.offered_fee = "Please enter a valid offered fee";
+      }
+      if (Number.isNaN(paid) || paid < 0) {
+        newErrors.amount_paid = "Please enter a valid amount";
+      }
+
+      if (!Number.isNaN(offered) && !Number.isNaN(paid)) {
+        if (paid >= offered) {
+          newErrors.amount_paid =
+            "Amount student is paying now must be less than offered registration fee";
+        }
+      }
+    }
 
     setErrors(newErrors);
-    if (isEditMode) {
-      delete newErrors.offered_fee;
-      delete newErrors.amount_paid;
-      delete newErrors.fee_proof;
-    }
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
+    if (isReadOnly) return; // block editing when in view mode
+
     const { name, value, files } = e.target;
     if (name === "fee_proof") {
       setFormData((prev) => ({ ...prev, fee_proof: files[0] }));
@@ -201,32 +260,42 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
     if (!validateForm()) return;
 
     const updatedFormData = { ...formData };
-    const registrationCharge = updatedFormData.service_charges?.find(
-      (s) => s.title === "Upon Registration"
-    );
 
-    if (registrationCharge) {
-      registrationCharge.expected_amount = Number(formData.offered_fee) || 0;
-      registrationCharge.paid_amount = Number(formData.amount_paid) || 0;
-      registrationCharge.pending_amount =
-        registrationCharge.expected_amount - registrationCharge.paid_amount;
+    if (isEditMode) {
+      // 🔴 Do NOT send these on update
+      delete updatedFormData.service_charges;
+      delete updatedFormData.offered_fee;
+      delete updatedFormData.amount_paid;
+      delete updatedFormData.fee_proof;
+    } else {
+      // ✅ Only manipulate service_charges on create
+      const registrationCharge = updatedFormData.service_charges?.find(
+        (s) => s.title === "Upon Registration"
+      );
 
-      if (registrationCharge.paid_amount > 0) {
-        registrationCharge.transactions = [
-          {
-            date: new Date().toISOString(),
-            amount: registrationCharge.paid_amount,
-            mode: "Bank Transfer",
-            note: "Initial registration payment",
-            receipt: formData.fee_proof || null,
-          },
-        ];
+      if (registrationCharge) {
+        registrationCharge.expected_amount = Number(formData.offered_fee) || 0;
+        registrationCharge.paid_amount = Number(formData.amount_paid) || 0;
+        registrationCharge.pending_amount =
+          registrationCharge.expected_amount - registrationCharge.paid_amount;
+
+        if (registrationCharge.paid_amount > 0) {
+          registrationCharge.transactions = [
+            {
+              date: new Date().toISOString(),
+              amount: registrationCharge.paid_amount,
+              mode: "Bank Transfer",
+              note: "Initial registration payment",
+              receipt: formData.fee_proof || null,
+            },
+          ];
+        }
       }
-    }
 
-    updatedFormData.service_charges = updatedFormData.service_charges.map(
-      (sc) => (sc.title === "Upon Registration" ? registrationCharge : sc)
-    );
+      updatedFormData.service_charges = updatedFormData.service_charges?.map(
+        (sc) => (sc.title === "Upon Registration" ? registrationCharge : sc)
+      );
+    }
 
     onSubmit?.(updatedFormData, isEditMode);
     onClose();
@@ -295,6 +364,25 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
     }
   }, [open, isEditMode]);
 
+  const isFieldDisabled = (fieldName) => {
+    // In view mode, everything is disabled
+    if (isReadOnly) return true;
+
+    // In edit mode, block these three fields from being edited
+    if (
+      isEditMode &&
+      (fieldName === "offered_fee" ||
+        fieldName === "amount_paid" ||
+        fieldName === "fee_proof" ||
+        fieldName === "visa_type" ||
+        fieldName === "country_id")
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box
@@ -306,11 +394,35 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
           gap: 2,
         }}
       >
-        <Typography variant="h6" fontWeight={600}>
-          {isEditMode ? "Update Application" : "Add New Application"}
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            {isCreateMode
+              ? "Add New Application"
+              : isReadOnly
+              ? "Application Details"
+              : "Update Application"}
+          </Typography>
+
+          {isEditMode && isReadOnly && (
+            <IconButton
+              size="small"
+              onClick={() => setIsReadOnly(false)}
+              title="Edit Application"
+            >
+              <CreateIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+
         <Divider />
 
+        {/* Full Name + Email */}
         <div
           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
         >
@@ -323,6 +435,7 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
             onChange={handleChange}
             error={!!errors.applicant_name}
             helperText={errors.applicant_name}
+            disabled={isFieldDisabled("applicant_name")}
           />
           <TextField
             label="Email"
@@ -333,9 +446,11 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
             onChange={handleChange}
             error={!!errors.email}
             helperText={errors.email}
+            disabled={isFieldDisabled("email")}
           />
         </div>
 
+        {/* Phone + Age */}
         <div
           style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
         >
@@ -348,6 +463,7 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
             onChange={handleChange}
             error={!!errors.phone}
             helperText={errors.phone}
+            disabled={isFieldDisabled("phone")}
           />
           <TextField
             label="Age"
@@ -359,235 +475,213 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
             onChange={handleChange}
             error={!!errors.age}
             helperText={errors.age}
+            disabled={isFieldDisabled("age")}
           />
         </div>
 
+        {/* Visa Type + Country */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <TextField
+            label="Select Visa Type"
+            name="visa_type"
+            select
+            fullWidth
+            variant="outlined"
+            value={formData.visa_type}
+            onChange={handleChange}
+            error={!!errors.visa_type}
+            helperText={errors.visa_type}
+            disabled={isFieldDisabled("visa_type")}
+          >
+            <MenuItem value="student">Student Visa</MenuItem>
+            <MenuItem value="job">Job Visa</MenuItem>
+          </TextField>
+          <TextField
+            label="Country"
+            name="country_id"
+            select
+            fullWidth
+            variant="outlined"
+            value={formData.country_id}
+            onChange={handleChange}
+            error={!!errors.country_id}
+            helperText={errors.country_id}
+            disabled={isFieldDisabled("country_id")}
+          >
+            {countryList?.map((country) => (
+              <MenuItem key={country?.id} value={country?.id}>
+                {country?.name}
+              </MenuItem>
+            ))}
+          </TextField>
+        </div>
+
+        {/* University + Course */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <TextField
+            label="University / College / Institute"
+            name="university"
+            fullWidth
+            variant="outlined"
+            value={formData.university}
+            onChange={handleChange}
+            error={!!errors.university}
+            helperText={errors.university}
+            disabled={isFieldDisabled("university")}
+          />
+          <TextField
+            label="Course"
+            name="course"
+            fullWidth
+            variant="outlined"
+            value={formData.course}
+            onChange={handleChange}
+            error={!!errors.course}
+            helperText={errors.course}
+            disabled={isFieldDisabled("course")}
+          />
+        </div>
+
+        {/* Plus Two + Degree */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <TextField
+            label="12th Mark (%)"
+            name="plustwo_perc"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={formData.plustwo_perc}
+            onChange={handleChange}
+            error={!!errors.plustwo_perc}
+            helperText={errors.plustwo_perc}
+            disabled={isFieldDisabled("plustwo_perc")}
+          />
+          <TextField
+            label="Degree Mark (%)"
+            name="degree_perc"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={formData.degree_perc}
+            onChange={handleChange}
+            error={!!errors.degree_perc}
+            helperText={errors.degree_perc}
+            disabled={isFieldDisabled("degree_perc")}
+          />
+        </div>
+
+        {/* Intake + Year of Passout */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <TextField
+            label="Intake"
+            name="year_intake"
+            fullWidth
+            variant="outlined"
+            value={formData.year_intake}
+            onChange={handleChange}
+            error={!!errors.year_intake}
+            helperText={errors.year_intake}
+            disabled={isFieldDisabled("year_intake")}
+          />
+          <TextField
+            label="Year of Passout"
+            name="year_of_pass_out"
+            fullWidth
+            variant="outlined"
+            value={formData.year_of_pass_out}
+            onChange={handleChange}
+            error={!!errors.year_of_pass_out}
+            helperText={errors.year_of_pass_out}
+            disabled={isFieldDisabled("year_of_pass_out")}
+          />
+        </div>
+
+        {/* Offered fee + Amount paid */}
+        {/* {(isCreateMode || (isEditMode && isReadOnly)) && ( */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <TextField
+            label="Offered Registration Fee"
+            name="offered_fee"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={formData.offered_fee}
+            onChange={handleChange}
+            error={!!errors.offered_fee}
+            helperText={errors.offered_fee}
+            // editable only while creating
+            disabled={isEditMode} // true in view; false in create
+          />
+          <TextField
+            label="Amount Student Paying Now"
+            name="amount_paid"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={formData.amount_paid}
+            onChange={handleChange}
+            error={!!errors.amount_paid}
+            helperText={errors.amount_paid}
+            disabled={isEditMode}
+          />
+        </div>
+        {/* )} */}
+
+        {/* Fee proof upload – only on create (edit can only view existing receipt) */}
         {!isEditMode && (
-          <>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              <TextField
-                label="Select Visa Type"
-                name="visa_type"
-                select
-                fullWidth
-                variant="outlined"
-                value={formData.visa_type}
-                onChange={handleChange}
-                error={!!errors.visa_type}
-                helperText={errors.visa_type}
-              >
-                <MenuItem value="student">Student Visa</MenuItem>
-                <MenuItem value="job">Job Visa</MenuItem>
-              </TextField>
-              <TextField
-                label="Country"
-                name="country_id"
-                select
-                fullWidth
-                variant="outlined"
-                value={formData.country_id}
-                onChange={handleChange}
-                error={!!errors.country_id}
-                helperText={errors.country_id}
-              >
-                {countryList?.map((country) => (
-                  <MenuItem key={country?.id} value={country?.id}>
-                    {country?.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              <TextField
-                label="University / College / Institute"
-                name="university"
-                fullWidth
-                variant="outlined"
-                value={formData.university}
-                onChange={handleChange}
-                error={!!errors.university}
-                helperText={errors.university}
-              />
-              <TextField
-                label="Course"
-                name="course"
-                fullWidth
-                variant="outlined"
-                value={formData.course}
-                onChange={handleChange}
-                error={!!errors.course}
-                helperText={errors.course}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              <TextField
-                label="12th Mark (%)"
-                name="plustwo_perc"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={formData.plustwo_perc}
-                onChange={handleChange}
-                error={!!errors.plustwo_perc}
-                helperText={errors.plustwo_perc}
-              />
-              <TextField
-                label="Degree Mark (%)"
-                name="degree_perc"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={formData.degree_perc}
-                onChange={handleChange}
-                error={!!errors.degree_perc}
-                helperText={errors.degree_perc}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              <TextField
-                label="Intake"
-                name="year_intake"
-                fullWidth
-                variant="outlined"
-                value={formData.year_intake}
-                onChange={handleChange}
-                error={!!errors.year_intake}
-                helperText={errors.year_intake}
-              />
-              <TextField
-                label="Year of Passout"
-                name="year_of_pass_out"
-                fullWidth
-                variant="outlined"
-                value={formData.year_of_pass_out}
-                onChange={handleChange}
-                error={!!errors.year_of_pass_out}
-                helperText={errors.year_of_pass_out}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              <TextField
-                label="Offered Registration Fee"
-                name="offered_fee"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={formData.offered_fee}
-                onChange={handleChange}
-                error={!!errors.offered_fee}
-                helperText={errors.offered_fee}
-              />
-              <TextField
-                label="Amount Student Paying Now"
-                name="amount_paid"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={formData.amount_paid}
-                onChange={handleChange}
-                error={!!errors.amount_paid}
-                helperText={errors.amount_paid}
-              />
-            </div>
-
-            <div>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Upload Fee Payment Proof
+          <div>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Upload Fee Payment Proof (optional)
+            </Typography>
+            <input
+              type="file"
+              name="fee_proof"
+              accept="image/*,application/pdf"
+              onChange={handleChange}
+              disabled={isFieldDisabled("fee_proof")}
+            />
+            {errors.fee_proof && (
+              <Typography variant="caption" color="error">
+                {errors.fee_proof}
               </Typography>
-              <input
-                type="file"
-                name="fee_proof"
-                accept="image/*,application/pdf"
-                onChange={handleChange}
-              />
-              {errors.fee_proof && (
-                <Typography variant="caption" color="error">
-                  {errors.fee_proof}
-                </Typography>
-              )}
-            </div>
-          </>
+            )}
+          </div>
         )}
 
+        {/* Vendor + Receipt preview (only in edit mode) */}
         {isEditMode && (
           <>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              <TextField
-                label="12th Mark (%)"
-                name="plustwo_perc"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={formData.plustwo_perc}
-                onChange={handleChange}
-                error={!!errors.plustwo_perc}
-                helperText={errors.plustwo_perc}
-              />
-              <TextField
-                label="Degree Mark (%)"
-                name="degree_perc"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={formData.degree_perc}
-                onChange={handleChange}
-                error={!!errors.degree_perc}
-                helperText={errors.degree_perc}
-              />
-            </div>
-
-            <TextField
-              label="Year of Passout"
-              name="year_of_pass_out"
-              fullWidth
-              variant="outlined"
-              value={formData.year_of_pass_out}
-              onChange={handleChange}
-              error={!!errors.year_of_pass_out}
-              helperText={errors.year_of_pass_out}
-            />
-
-            {currentRole != "counsellor" && (
+            {currentRole !== "counsellor" && (
               <TextField
                 label="Vendor"
                 name="vendor"
@@ -595,6 +689,7 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
                 variant="outlined"
                 value={formData.vendor}
                 onChange={handleChange}
+                disabled={isFieldDisabled("vendor")}
               />
             )}
 
@@ -663,7 +758,9 @@ function ApplicationFormDrawer({ open, onClose, onSubmit, editData }) {
             onClick={handleSubmit}
             variant="contained"
             sx={{ bgcolor: "#332C6A", textTransform: "inherit" }}
-            disabled={loadingDefaults}
+            disabled={
+              loadingDefaults || (isEditMode && isReadOnly) // can't submit in pure view mode
+            }
           >
             {isEditMode ? (loadingDefaults ? "Loading..." : "Update") : "Add"}
           </Button>
@@ -697,6 +794,7 @@ export default function ApplicationTable({
   const currentRole = localStorage.getItem("role");
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [drawerMode, setDrawerMode] = useState("create"); // "create" | "view"
   const countries = localStorage.getItem("countries");
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [userSearch, setUserSearch] = useState("");
@@ -741,7 +839,7 @@ export default function ApplicationTable({
 
   const hasData = applications && applications.length > 0;
 
-  // NEW: fetch users (once, when transfer dialog first opens)
+  // fetch users (once, when transfer dialog first opens)
   const fetchUsers = async () => {
     if (allUsers.length) return;
     try {
@@ -750,8 +848,7 @@ export default function ApplicationTable({
         params: {
           role_id: 4,
         },
-      }); // adjust endpoint if needed
-      // expect array of { id, name, email, ... }
+      });
       setAllUsers(res?.data?.data || []);
     } catch (err) {
       setAllUsers([]);
@@ -760,7 +857,7 @@ export default function ApplicationTable({
     }
   };
 
-  // NEW: open transfer dialog for transdering application
+  // open transfer dialog for transferring application
   const handleOpenTransferDialog = async (app, event) => {
     event.stopPropagation();
     setSelectedApplicationForTransfer(app);
@@ -768,7 +865,7 @@ export default function ApplicationTable({
     await fetchUsers();
   };
 
-  // NEW: filtered users based on search
+  // filtered users based on search
   const filteredUsers = allUsers.filter((u) => {
     const q = userSearch.trim().toLowerCase();
     if (!q) return true;
@@ -777,17 +874,14 @@ export default function ApplicationTable({
     return name.includes(q) || email.includes(q);
   });
 
-  // NEW: confirm transfer handler
-  // NEW: confirm transfer handler (SAFE)
+  // confirm transfer handler
   const handleConfirmTransfer = () => {
-    // Make sure we actually have selected application and user
     if (!selectedApplicationForTransfer || !confirmTransferDialog.user) {
       setConfirmTransferDialog({ open: false, user: null });
       setSelectedApplicationForTransfer(null);
       return;
     }
 
-    // Make sure actionFunction is a valid function
     if (typeof actionFunction !== "function") {
       console.error(
         "actionFunction is not a function. Please check the prop passed to <ApplicationTable />"
@@ -808,7 +902,6 @@ export default function ApplicationTable({
 
     const userId = confirmTransferDialog.user.id;
 
-    // Call parent handler to actually do the transfer
     actionFunction(
       { application_id: applicationId, user_id: userId },
       "transfer"
@@ -988,6 +1081,7 @@ export default function ApplicationTable({
                       }}
                       onClick={() => {
                         setEditData(null);
+                        setDrawerMode("create");
                         setOpen(true);
                       }}
                     >
@@ -1090,7 +1184,7 @@ export default function ApplicationTable({
                           </TableCell>
                         ))}
                         <TableCell align="center">
-                          {currentRole != "counsellor" && (
+                          {currentRole !== "counsellor" && (
                             <IconButton
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1108,15 +1202,19 @@ export default function ApplicationTable({
                               <DeleteOutlineIcon />
                             </IconButton>
                           )}
+
+                          {/* Eye icon to view details in drawer */}
                           <IconButton
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditData(app);
+                              setDrawerMode("view");
                               setOpen(true);
                             }}
                           >
-                            <CreateIcon fontSize="small" />
+                            <VisibilityIcon fontSize="small" />
                           </IconButton>
+
                           <IconButton
                             onClick={(e) => handleOpenTransferDialog(app, e)}
                           >
@@ -1171,9 +1269,11 @@ export default function ApplicationTable({
         onClose={() => {
           setOpen(false);
           setEditData(null);
+          setDrawerMode("create");
         }}
         onSubmit={handleSubmit}
         editData={editData}
+        mode={drawerMode}
       />
 
       <Dialog
@@ -1207,7 +1307,8 @@ export default function ApplicationTable({
           </Button>
         </DialogActions>
       </Dialog>
-      {/* NEW: user selection dialog for transfer */}
+
+      {/* user selection dialog for transfer */}
       <Dialog
         open={userDialogOpen}
         onClose={() => {
@@ -1285,7 +1386,7 @@ export default function ApplicationTable({
         </DialogActions>
       </Dialog>
 
-      {/* NEW: confirmation dialog for transfer */}
+      {/* confirmation dialog for transfer */}
       <Dialog
         open={confirmTransferDialog.open}
         onClose={() => setConfirmTransferDialog({ open: false, user: null })}
