@@ -187,7 +187,9 @@ function ApplicationFormDrawer({
         key === "vendor" ||
         key === "status" ||
         key === "service_charges" ||
-        key === "fee_proof" // proof is optional now
+        key === "fee_proof" || // proof is optional now
+        key === "offered_fee" || // optional
+        key === "amount_paid"
       ) {
         return;
       }
@@ -219,8 +221,8 @@ function ApplicationFormDrawer({
       }
     }
 
-    // Amount validation (amount_paid must be LESS than offered_fee) – only on create
-    if (!isEditMode && formData.offered_fee && formData.amount_paid) {
+    // 💰 Amount validation (amount_paid must be <= offered_fee) – now for BOTH create & edit
+    if (formData.offered_fee !== "" && formData.amount_paid !== "") {
       const offered = Number(formData.offered_fee);
       const paid = Number(formData.amount_paid);
 
@@ -232,9 +234,10 @@ function ApplicationFormDrawer({
       }
 
       if (!Number.isNaN(offered) && !Number.isNaN(paid)) {
-        if (paid >= offered) {
+        // ✅ now enforcing: paid <= offered
+        if (paid > offered) {
           newErrors.amount_paid =
-            "Amount student is paying now must be less than offered registration fee";
+            "Amount student is paying now cannot be more than the offered registration fee";
         }
       }
     }
