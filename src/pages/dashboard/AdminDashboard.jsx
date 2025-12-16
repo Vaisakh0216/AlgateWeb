@@ -50,6 +50,7 @@ import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../config/axiosConfig";
 import { useToast } from "../../components/Toast";
+import { format, parseISO } from "date-fns";
 
 // function ApplicationFormDrawer({ open, onClose, onSubmit }) {
 //   const [formData, setFormData] = useState({
@@ -391,6 +392,7 @@ const AdminDashboard = () => {
   const { showToast } = useToast();
   const adminTabeHeaders = [
     "Student Id",
+    "Created Date",
     "Student Name",
     "Country",
     "Course",
@@ -403,6 +405,7 @@ const AdminDashboard = () => {
 
   const processorTabeHeaders = [
     "Student Id",
+    "Created Date",
     "Student Name",
     "Country",
     "Course",
@@ -471,6 +474,7 @@ const AdminDashboard = () => {
           currentRole == "admin"
             ? [
                 item.id,
+                format(parseISO(item?.created_at), "dd-MM-yyyy"),
                 item.applicant_name,
                 item?.country?.name,
                 item.course,
@@ -483,6 +487,7 @@ const AdminDashboard = () => {
               ]
             : [
                 item.id,
+                format(parseISO(item?.created_at), "dd-MM-yyyy"),
                 item.applicant_name,
                 item?.country?.name,
                 item.course,

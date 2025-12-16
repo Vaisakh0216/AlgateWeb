@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ApplicationTable from "../../components/Table";
 import axiosInstance from "../../config/axiosConfig";
 import { useParams } from "react-router-dom";
+import { format, parseISO } from "date-fns";
 
 const Application = () => {
   const [applications, setApplications] = useState([]);
@@ -34,6 +35,7 @@ const Application = () => {
 
   const adminTabeHeaders = [
     "Student Id",
+    "Created Date",
     "Student Name",
     "Country",
     "Course",
@@ -46,6 +48,7 @@ const Application = () => {
 
   const processorTabeHeaders = [
     "Student Id",
+    "Created Date",
     "Student Name",
     "Country",
     "Course",
@@ -96,6 +99,7 @@ const Application = () => {
           currentRole == "admin"
             ? [
                 item.id,
+                format(parseISO(item?.created_at), "dd-MM-yyyy"),
                 item.applicant_name,
                 item?.country?.name,
                 item.course,
@@ -108,6 +112,7 @@ const Application = () => {
               ]
             : [
                 item.id,
+                format(parseISO(item?.created_at), "dd-MM-yyyy"),
                 item.applicant_name,
                 item?.country?.name,
                 item.course,
