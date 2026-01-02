@@ -3,6 +3,7 @@ import ApplicationTable from "../../components/Table";
 import axiosInstance from "../../config/axiosConfig";
 import { useParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
+import { useToast } from "../../components/Toast";
 
 const Application = () => {
   const [applications, setApplications] = useState([]);
@@ -24,6 +25,8 @@ const Application = () => {
   });
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("asc");
+  const { showToast } = useToast();
+
   const tabeHeaders = [
     "Student Id",
     "Student Name",
@@ -133,6 +136,16 @@ const Application = () => {
     getCountriesList();
   }, [pagination.current_page, pagination.per_page, search, sortBy, filters]);
 
+  const handleDeleteApplication = async (id) => {
+    await axiosInstance.delete(`/applications/${id}`).then((res) => {
+      showToast({
+        message: "Application deleted successfully!",
+        severity: "success",
+      });
+      getApplicationsList(pagination.current_page, pagination.per_page);
+    });
+  };
+
   return (
     <div>
       <h3
@@ -169,6 +182,7 @@ const Application = () => {
             current_page: 1,
           }))
         }
+        deleteFunction={handleDeleteApplication}
       />
     </div>
   );

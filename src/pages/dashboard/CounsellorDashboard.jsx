@@ -76,6 +76,9 @@ function CounsellorDashboard() {
           },
         })
         .then((res) => {
+          axiosInstance.get(
+            `/applications-step-record-sync/${res?.data?.data?.id}`
+          );
           getApplicationsList();
         });
     } else {

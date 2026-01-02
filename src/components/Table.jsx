@@ -780,7 +780,7 @@ export default function ApplicationTable({
   applications,
   tabeHeaders,
   actionFunction,
-  deleteFunction,
+  deleteFunction = async () => {},
   pagination,
   onPageChange,
   onPerPageChange,
@@ -834,10 +834,10 @@ export default function ApplicationTable({
   };
 
   const handleDeleteConfirm = async () => {
-    if (deleteFunction && deleteDialog.selectedId) {
+    if (deleteDialog.selectedId) {
       await deleteFunction(deleteDialog.selectedId);
+      setDeleteDialog({ open: false, selectedId: null });
     }
-    setDeleteDialog({ open: false, selectedId: null });
   };
 
   const hasData = applications && applications.length > 0;
