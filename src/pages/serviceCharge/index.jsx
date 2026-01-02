@@ -3,6 +3,7 @@ import ApplicationTable from "../../components/Table";
 import axiosInstance from "../../config/axiosConfig";
 import { useParams } from "react-router-dom";
 import ServiceChargeTable from "../../components/ServiceChargeTable";
+import { format, parseISO } from "date-fns";
 
 const ServiceCharge = () => {
   const [applications, setApplications] = useState([]);
@@ -28,6 +29,7 @@ const ServiceCharge = () => {
 
   const tabeHeaders = [
     "Student Id",
+    "Created Date",
     "Student Name",
     "Course",
     "University",
@@ -56,6 +58,7 @@ const ServiceCharge = () => {
         setLoading(false);
         const rows = res?.data?.data?.map((item) => [
           item.id,
+          format(parseISO(item?.created_at), "dd-MM-yyyy"),
           item.applicant_name,
           item.course,
           item.university,

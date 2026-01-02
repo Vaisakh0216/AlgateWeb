@@ -1346,6 +1346,7 @@ import CommentBox from "../../commentBox";
 import { styled } from "@mui/material/styles";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useToast } from "../../components/Toast";
+import ApostilleMainForm from "../../components/Form";
 
 export default function ApplicationDetail() {
   const [open, setOpen] = React.useState(false);
@@ -1356,6 +1357,7 @@ export default function ApplicationDetail() {
   const para = useParams();
   const [stepComments, setStepComments] = React.useState([]);
   const [selectedApp, setSelectedApp] = React.useState();
+  const [apostilleService, setApostilleService] = React.useState();
   const currentRole = localStorage.getItem("role");
 
   // 🔹 New states for step confirmation
@@ -1388,6 +1390,9 @@ export default function ApplicationDetail() {
         setApplicationSteps(res?.data?.application);
         setSelectedApp(res?.data?.application);
       });
+    axiosInstance
+      .get(`applications/${para?.id}/services`)
+      .then((res) => console.log("this is entire details", res));
   };
 
   React.useEffect(() => {
@@ -1719,7 +1724,6 @@ export default function ApplicationDetail() {
             {allExpanded ? "Collapse" : "Expand"}
           </Button>
         </div>
-
         <Box>
           <Stepper orientation="vertical" nonLinear>
             {(currentRole == "counsellor"
@@ -1858,6 +1862,9 @@ export default function ApplicationDetail() {
           </Stepper>
         </Box>
 
+        <div style={{ marginTop: "40px" }}>
+          <ApostilleMainForm />
+        </div>
         {/* Sticky Footer */}
         {selectedApp?.status == "open" && currentRole != "counsellor" && (
           <div
