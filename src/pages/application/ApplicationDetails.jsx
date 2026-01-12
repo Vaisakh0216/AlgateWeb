@@ -1542,6 +1542,10 @@ export default function ApplicationDetail() {
   };
 
   const handleCloseStepConfirm = () => setStepConfirmOpen(false);
+  const allowedCodes = ["UK", "MT", "SG", "MY"];
+  const isAllowedCountryForCounsellor = allowedCodes.includes(
+    applicationSteps?.country?.code
+  );
 
   return (
     <div style={{ height: "100%" }}>
@@ -1722,7 +1726,7 @@ export default function ApplicationDetail() {
 
         <Box>
           <Stepper orientation="vertical" nonLinear>
-            {(currentRole == "counsellor"
+            {(currentRole == "counsellor" && !isAllowedCountryForCounsellor
               ? applicationSteps?.steps?.slice(0, 1)
               : applicationSteps?.steps
             )?.map((step, index) => (

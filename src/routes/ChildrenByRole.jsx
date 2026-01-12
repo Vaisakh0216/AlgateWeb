@@ -25,10 +25,13 @@ export function getChildrenByRole(role) {
             { path: ":id/:childId", element: <ApplicationDetail /> },
           ],
         },
-        // {
-        //   path: "serviceCharge",
-        //   element: <ServiceCharge />,
-        // },
+        {
+          path: "serviceCharge",
+          children: [
+            { index: true, element: <ServiceCharge /> },
+            { path: ":id", element: <ServiceChargeOverview /> },
+          ],
+        },
       ];
 
     case "admin":

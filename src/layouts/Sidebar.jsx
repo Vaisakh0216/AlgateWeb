@@ -18,11 +18,11 @@ export default function Sidebar() {
             path: "/dashboard",
             icon: <DashboardIcon fontSize="small" />,
           },
-          // {
-          //   name: "Service Charge",
-          //   path: "/serviceCharge",
-          //   icon: <ManageAccountsIcon fontSize="small" />,
-          // },
+          {
+            name: "Service Charge",
+            path: "/serviceCharge",
+            icon: <ManageAccountsIcon fontSize="small" />,
+          },
         ]
       : [
           {

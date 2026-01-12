@@ -469,8 +469,15 @@ const AdminDashboard = () => {
         }
       )
       .then((res) => {
+        const blockedCodes = ["UK", "MT", "SG", "MY"];
+        const data = res?.data?.data || [];
+        const filteredData =
+          currentRole === "processor"
+            ? data.filter((item) => !blockedCodes.includes(item?.country?.code))
+            : data;
+
         setLoading(false);
-        const rows = res?.data?.data?.map((item) =>
+        const rows = filteredData?.map((item) =>
           currentRole == "admin"
             ? [
                 item.id,

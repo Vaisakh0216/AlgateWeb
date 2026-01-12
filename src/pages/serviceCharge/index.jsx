@@ -30,6 +30,7 @@ const ServiceCharge = () => {
     "Student Id",
     "Student Name",
     "Course",
+    "Country",
     "University",
     "Total Amount",
     "Paid Amount",
@@ -48,16 +49,31 @@ const ServiceCharge = () => {
           sort_direction: sortBy,
           country_id: filters.country_id || undefined,
           status: filters.status || undefined,
-          application_processor:
-            currentRole == "admin" ? "" : JSON.parse(currentUserInfo)?.id,
+          ...(currentRole === "processor" && {
+            application_processor: JSON.parse(currentUserInfo)?.id,
+          }),
+          ...(currentRole === "counsellor" && {
+            application_counselor: JSON.parse(currentUserInfo)?.id,
+          }),
         },
       })
       .then((res) => {
         setLoading(false);
-        const rows = res?.data?.data?.map((item) => [
+
+        const blockedCodes = ["UK", "MT", "SG", "MY"];
+        const data = res?.data?.data || [];
+        const filteredData =
+          currentRole === "processor"
+            ? data.filter((item) => !blockedCodes.includes(item?.country?.code))
+            : currentRole === "counsellor"
+            ? data.filter((item) => blockedCodes.includes(item?.country?.code))
+            : data;
+
+        const rows = filteredData?.map((item) => [
           item.id,
           item.applicant_name,
           item.course,
+          item?.country?.name,
           item.university,
           item?.service_charges?.reduce(
             (sum, charge) => sum + Number(charge?.expected_amount || 0),
