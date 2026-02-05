@@ -58,15 +58,15 @@ function CounsellorDashboard() {
           "",
         ]);
         setApplications(rows);
+        setPagination(res?.data?.pagination);
       });
   };
 
   useEffect(() => {
-    getApplicationsList();
+    getApplicationsList(pagination.current_page, pagination.per_page);
   }, [pagination.current_page, pagination.per_page, search, sortBy, filters]);
 
   const createApplication = (data, status) => {
-    console.log("this is status", data);
     if (status == "create") {
       axios
         .post("https://algatecrm-api.v-nexus.com/api/applications", data, {
@@ -107,9 +107,9 @@ function CounsellorDashboard() {
         <ApplicationTable
           applications={applications}
           tabeHeaders={tabeHeaders}
+          pagination={pagination}
           actionFunction={createApplication}
           loading={loading}
-          pagination={pagination}
           onPageChange={(newPage) =>
             setPagination((prev) => ({ ...prev, current_page: newPage }))
           }
