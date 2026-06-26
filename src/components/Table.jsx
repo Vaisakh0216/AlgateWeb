@@ -914,6 +914,10 @@ export default function ApplicationTable({
     setSelectedApplicationForTransfer(null);
   };
 
+  const syncApplication = (id) => {
+    axiosInstance.get(`/applications-step-record-sync/${id}`);
+  };
+
   return (
     <div>
       <Box sx={{ minHeight: "100vh" }}>
@@ -1141,9 +1145,10 @@ export default function ApplicationTable({
                       <TableRow
                         key={idx}
                         sx={{ bgcolor: idx % 2 === 1 ? "#f8fcff" : "white" }}
-                        onClick={() =>
-                          navigate(`/application/${app[0]}/${app[1]}}`)
-                        }
+                        onClick={() => {
+                          navigate(`/application/${app[0]}/${app[1]}}`);
+                          syncApplication(app[0]);
+                        }}
                       >
                         {tabeHeaders.map((header, i) => (
                           <TableCell key={i}>
